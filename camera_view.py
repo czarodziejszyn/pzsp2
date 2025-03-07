@@ -1,3 +1,4 @@
+# mediapipe wymaga pythona w niższej wersji np 3.10.12
 import cv2
 import sys
 import mediapipe as mp
