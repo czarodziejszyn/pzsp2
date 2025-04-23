@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class VideoPlayerPage extends StatelessWidget {
-  final String imageUrl;
-  final String danceStyle;
+  final String videoUrl;
+  final String danceDescription;
   final double startTime;
   final double endTime;
   
   const VideoPlayerPage({
     super.key,
-    required this.imageUrl,
-    required this.danceStyle,
+    required this.videoUrl,
+    required this.danceDescription,
     required this.startTime,
     required this.endTime,
   });
@@ -18,7 +18,7 @@ class VideoPlayerPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Playing: $danceStyle'),
+        title: Text('Playing: $danceDescription'),
       ),
       body: Center(
         child: Column(
@@ -30,7 +30,7 @@ class VideoPlayerPage extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    imageUrl,
+                    videoUrl,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
                       return const Center(

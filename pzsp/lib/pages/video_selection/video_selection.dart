@@ -3,12 +3,16 @@ import '../video_player/video_player.dart';
 
 class VideoSelectionPage extends StatefulWidget {
   final String selectedImage;
-  final String danceStyle;
+  final String danceDescription;
+  final String selectedVideo;
+  final double length;
   
   const VideoSelectionPage({
     super.key,
     required this.selectedImage,
-    required this.danceStyle,
+    required this.danceDescription,
+    required this.selectedVideo,
+    required this.length,
   });
 
   @override
@@ -16,17 +20,24 @@ class VideoSelectionPage extends StatefulWidget {
 }
 
 class _VideoSelectionPageState extends State<VideoSelectionPage> {
-  RangeValues _currentRangeValues = const RangeValues(0, 30);
-  final double _maxDuration = 60.0;
+  late RangeValues _currentRangeValues;
+  late double _maxDuration;
   final double _minRange = 10.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _maxDuration = widget.length.toDouble();
+    _currentRangeValues = RangeValues(0, _maxDuration);
+  }
 
   void _onNextButtonPressed() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => VideoPlayerPage(
-          imageUrl: widget.selectedImage,
-          danceStyle: widget.danceStyle,
+          videoUrl: widget.selectedVideo,
+          danceDescription: widget.danceDescription,
           startTime: _currentRangeValues.start,
           endTime: _currentRangeValues.end,
         ),
@@ -38,7 +49,7 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.danceStyle),
+        title: Text(widget.danceDescription),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

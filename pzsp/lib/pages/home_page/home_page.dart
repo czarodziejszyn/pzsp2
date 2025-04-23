@@ -14,10 +14,10 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   final List<Map<String, dynamic>> _items = [
-    {'image': 'https://picsum.photos/seed/745/600', 'text': 'Dance Style 1'},
-    {'image': 'https://picsum.photos/seed/926/600', 'text': 'Dance Style 2'},
-    {'image': 'https://picsum.photos/seed/165/600', 'text': 'Dance Style 3'},
-    {'image': 'https://picsum.photos/seed/999/600', 'text': 'Dance Style 4'},
+    {'image': 'https://picsum.photos/seed/745/600', 'video': 'https://picsum.photos/seed/746/600', 'length': 120, 'text': 'Dance Style 1'},
+    {'image': 'https://picsum.photos/seed/926/600', 'video': 'https://picsum.photos/seed/747/600', 'length': 60,   'text': 'Dance Style 2'},
+    {'image': 'https://picsum.photos/seed/165/600', 'video': 'https://picsum.photos/seed/748/600', 'length': 140,   'text': 'Dance Style 3'},
+    {'image': 'https://picsum.photos/seed/999/600', 'video': 'https://picsum.photos/seed/749/600', 'length': 40,   'text': 'Dance Style 4'},
   ];
 
   void _onButtonPressed() {
@@ -26,7 +26,9 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(
         builder: (context) => VideoSelectionPage(
           selectedImage: _items[_currentIndex]['image'],
-          danceStyle: _items[_currentIndex]['text'],
+          selectedVideo: _items[_currentIndex]['video'],
+          danceDescription: _items[_currentIndex]['text'],
+          length: _items[_currentIndex]['length'],
         ),
       ),
     );
