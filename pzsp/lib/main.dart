@@ -11,7 +11,7 @@ class DanceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dance App',
+      title: 'MoovIT',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
         fontFamily: 'Inter',
