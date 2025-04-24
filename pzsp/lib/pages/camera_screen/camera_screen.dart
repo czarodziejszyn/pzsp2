@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import '../home_page/home_page.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:async';
 
@@ -42,19 +43,13 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> initCamera() async {
     await initializeCameras();
-    try {
-      final camera = cameras.first; // Pobierz pierwszą kamerę
-      cameraController = CameraController(camera, ResolutionPreset.medium);
 
-      // Upewnij się, że kamera jest zainicjowana
-      await cameraController!.initialize();
+    final camera = cameras.first;
+    cameraController = CameraController(camera, ResolutionPreset.medium);
+    await cameraController!.initialize();
 
-      // Jeśli kamera jest zainicjowana, zmień stan
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      print("Błąd podczas inicjalizacji kamery: $e");
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -63,7 +58,6 @@ class _CameraScreenState extends State<CameraScreen> {
       'assets/videos/my_video.mp4',
     );
     await controller.initialize();
-    // Gdy kontroler jest gotowy, zaktualizuj stan
     if (mounted) {
       setState(() {
         videoController = controller;
@@ -299,12 +293,15 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
-                    // Nawigowanie do innego ekranu
-                    Navigator.push(
+                    // Nawigowanie do HomePage
+
+                    Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const StoppedScreen(),
+                        builder: (context) => const HomePage(),
                       ),
+                      (Route<dynamic> route) =>
+                          false, // usuwa wszystkie wcześniejsze strony
                     );
                   },
                   child: const Text(
@@ -317,23 +314,6 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
           ),
         );
       },
-    );
-  }
-}
-
-class StoppedScreen extends StatelessWidget {
-  const StoppedScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Video Stopped")),
-      body: Center(
-        child: const Text(
-          "Video Stopped",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 }
