@@ -11,6 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   carousel_slider: 5.0.0
+  supabase_flutter: ^2.0.0
+
 
 
 dev_dependencies:
