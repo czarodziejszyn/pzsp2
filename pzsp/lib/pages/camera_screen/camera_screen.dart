@@ -58,20 +58,20 @@ class _CameraScreenState extends State<CameraScreen> {
       'assets/videos/my_video.mp4',
     );
     await controller.initialize();
-    if (mounted) {
-      setState(() {
-        videoController = controller;
-      });
-    }
-    controller.setLooping(false);
+    await controller.seekTo(Duration.zero);
 
     final Duration segmentDuration = Duration(
       milliseconds: ((widget.endTime - widget.startTime) * 1000).round(),
     );
+    print(segmentDuration);
+
+    final Duration startDuration = Duration(seconds: widget.startTime.toInt());
+    print(startDuration);
 
     controller.addListener(() {
       final isFinished = controller.value.position >= segmentDuration;
       if (isFinished && mounted) {
+        controller.pause();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const FinishedScreen()),
@@ -79,9 +79,14 @@ class _CameraScreenState extends State<CameraScreen> {
       }
     });
 
-    setState(() {
-      videoController = controller;
-    });
+    controller.setLooping(false);
+    await controller.seekTo(startDuration);
+
+    if (mounted) {
+      setState(() {
+        videoController = controller;
+      });
+    }
   }
 
   @override
@@ -102,7 +107,8 @@ class _CameraScreenState extends State<CameraScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done &&
                     videoController != null) {
-                  return CountdownBeforeVideo(videoController!);
+                  return CountdownBeforeVideo(
+                      videoController!, widget.startTime);
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -141,8 +147,9 @@ class FinishedScreen extends StatelessWidget {
 
 class CountdownBeforeVideo extends StatefulWidget {
   final VideoPlayerController controller;
+  final double startTime;
 
-  const CountdownBeforeVideo(this.controller, {super.key});
+  const CountdownBeforeVideo(this.controller, this.startTime, {super.key});
 
   @override
   State<CountdownBeforeVideo> createState() => _CountdownBeforeVideoState();
@@ -179,7 +186,9 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
           });
 
           if (widget.controller.value.isInitialized) {
-            widget.controller.seekTo(Duration.zero).then((_) {
+            final Duration startDuration =
+                Duration(seconds: widget.startTime.toInt());
+            widget.controller.seekTo(startDuration).then((_) {
               // opóźnienie, aby upewnić się, że kontroler jest gotowy do odtwarzania
               Future.delayed(const Duration(milliseconds: 100), () {
                 widget.controller.play();
