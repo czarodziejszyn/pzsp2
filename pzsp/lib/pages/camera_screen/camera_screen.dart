@@ -41,10 +41,21 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> initCamera() async {
-    final camera = cameras.first;
-    cameraController = CameraController(camera, ResolutionPreset.medium);
-    await cameraController!.initialize();
-    if (mounted) setState(() {});
+    await initializeCameras();
+    try {
+      final camera = cameras.first; // Pobierz pierwszą kamerę
+      cameraController = CameraController(camera, ResolutionPreset.medium);
+
+      // Upewnij się, że kamera jest zainicjowana
+      await cameraController!.initialize();
+
+      // Jeśli kamera jest zainicjowana, zmień stan
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print("Błąd podczas inicjalizacji kamery: $e");
+    }
   }
 
   Future<void> initVideo() async {
@@ -63,8 +74,6 @@ class _CameraScreenState extends State<CameraScreen> {
     final Duration segmentDuration = Duration(
       milliseconds: ((widget.endTime - widget.startTime) * 1000).round(),
     );
-
-    print(segmentDuration);
 
     controller.addListener(() {
       final isFinished = controller.value.position >= segmentDuration;
@@ -182,8 +191,6 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
                 widget.controller.play();
               });
             });
-          } else {
-            print("Kontroler wideo nie jest zainicjalizowany.");
           }
         });
       }
