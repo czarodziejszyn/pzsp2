@@ -7,6 +7,9 @@ from scipy.spatial.distance import euclidean
 from collections import deque
 import matplotlib.pyplot as plt
 
+def compare_points(camera_points, video_points):
+    return score
+
 VIDEO_PATH = "dance_video.mp4"
 CSV_PATH = "dance_landmarks.csv"
 WINDOW_NAME = "Live Dance Comparison"
