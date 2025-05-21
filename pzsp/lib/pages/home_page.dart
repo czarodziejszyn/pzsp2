@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login_page.dart';
+import 'add_video.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -108,8 +109,15 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: implement add action
+                  onPressed: () async {
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => const AddVideoDialog(),
+                    );
+                    if (result == true) {
+                      // odśwież listę po dodaniu nowego filmu
+                      await fetchItems();
+                    }
                   },
                   icon: const Icon(Icons.add, size: 20),
                   label:
