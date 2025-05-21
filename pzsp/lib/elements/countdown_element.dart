@@ -1,14 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:pzsp/pages/home_page.dart';
 import 'package:video_player/video_player.dart';
+import 'package:pzsp/pages/home_page.dart';
 
 class CountdownBeforeVideo extends StatefulWidget {
   final VideoPlayerController controller;
   final double startTime;
+  final VoidCallback onInterrupted;
 
-  const CountdownBeforeVideo(this.controller, this.startTime, {super.key});
+  const CountdownBeforeVideo(this.controller, this.startTime, {super.key, required this.onInterrupted});
 
   @override
   State<CountdownBeforeVideo> createState() => _CountdownBeforeVideoState();
@@ -43,16 +44,12 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
             showGo = false;
             videoStarted = true;
           });
-
-          if (widget.controller.value.isInitialized) {
-            final Duration startDuration =
-                Duration(seconds: widget.startTime.toInt());
-            widget.controller.seekTo(startDuration).then((_) {
-              Future.delayed(const Duration(milliseconds: 100), () {
-                widget.controller.play();
-              });
+          final start = Duration(seconds: widget.startTime.toInt());
+          widget.controller.seekTo(start).then((_) {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              widget.controller.play();
             });
-          }
+          });
         });
       }
     });
@@ -64,7 +61,6 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
       showGo = false;
       videoStarted = false;
     });
-
     startCountdown();
   }
 
@@ -80,10 +76,7 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
                 )
               : Text(
                   showGo ? 'GO!' : '$countdown',
-                  style: const TextStyle(
-                    fontSize: 64,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 64, fontWeight: FontWeight.bold),
                 ),
         ),
         if (videoStarted)
@@ -113,67 +106,41 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
 
   Future<void> _showPauseDialog(BuildContext context) async {
     if (!mounted) return;
-
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        elevation: 16,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          height: 250,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  restartCountdown();
+                },
+                child: const Text("Restart", style: TextStyle(fontSize: 24)),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  widget.onInterrupted(); // Notify Flutter
+                  Navigator.of(context).pop();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomePage()),
+                    (_) => false,
+                  );
+                },
+                child: const Text("Stop", style: TextStyle(fontSize: 24)),
+              ),
+            ],
           ),
-          elevation: 16,
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            height: 250,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(150, 70),
-                    backgroundColor: Colors.deepPurple,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    restartCountdown();
-                  },
-                  child: const Text(
-                    "Restart",
-                    style: TextStyle(fontSize: 24, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(150, 70),
-                    backgroundColor: Colors.deepPurple,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HomePage(),
-                      ),
-                      (Route<dynamic> route) => false,
-                    );
-                  },
-                  child: const Text(
-                    "Stop",
-                    style: TextStyle(fontSize: 24, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

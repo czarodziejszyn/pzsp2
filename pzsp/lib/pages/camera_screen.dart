@@ -1,14 +1,16 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter/rendering.dart';
-import 'package:http/http.dart' as http;
-import 'package:pzsp/elements/countdown_element.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:video_player/video_player.dart';
-import 'dart:async';
+import 'package:flutter/rendering.dart';
+
 import 'finished_screen.dart';
+import '../elements/countdown_element.dart';
 
 late List<CameraDescription> cameras;
 
@@ -38,23 +40,38 @@ class _CameraScreenState extends State<CameraScreen> {
   VideoPlayerController? videoController;
   late Future<void> videoInitFuture;
   final GlobalKey cameraKey = GlobalKey();
+  WebSocketChannel? channel;
+  Timer? _frameTimer;
 
   @override
   void initState() {
     super.initState();
+    _connectWebSocket();
     _initializeCamera();
     videoInitFuture = _initializeVideo();
-
-    Timer _timer = Timer.periodic(
-      const Duration(milliseconds: 500),
+    _frameTimer = Timer.periodic(
+      const Duration(milliseconds: 1000),
       (_) => _captureAndSendFrame(),
+    );
+  }
+
+  void _connectWebSocket() {
+    channel = WebSocketChannel.connect(
+      Uri.parse(
+        'ws://localhost:8000/ws',
+      ),
     );
   }
 
   Future<void> _captureAndSendFrame() async {
     final frame = await captureCameraFrame();
-    if (frame != null) {
-      await sendToBackend(frame);
+    if (frame != null && videoController?.value.isPlaying == true) {
+      final timestampMs = videoController!.value.position.inMilliseconds;
+      final message = {
+        'timestamp': timestampMs,
+        'image': base64Encode(frame),
+      };
+      channel?.sink.add(jsonEncode(message));
     }
   }
 
@@ -71,28 +88,12 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Future<void> sendToBackend(Uint8List imageBytes) async {
-    final uri = Uri.parse(
-      'http://localhost:8000/analyze-frame',
-    ); //TODO tutaj jest api miejsce
-
-    final request = http.MultipartRequest('POST', uri)
-      ..files.add(http.MultipartFile.fromBytes('image', imageBytes,
-          filename: 'frame.png'));
-
-    request.send();
-  }
-
   Future<void> _initializeCamera() async {
     await initializeCameras();
     final camera = cameras.first;
-    cameraController = CameraController(
-      camera,
-      ResolutionPreset.medium,
-      enableAudio: false,
-    );
+    cameraController =
+        CameraController(camera, ResolutionPreset.medium, enableAudio: false);
     await cameraController!.initialize();
-
     if (mounted) setState(() {});
   }
 
@@ -100,47 +101,40 @@ class _CameraScreenState extends State<CameraScreen> {
     final controller =
         VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
     await controller.initialize();
-
     final start = Duration(seconds: widget.startTime.toInt());
     final end = Duration(seconds: widget.endTime.toInt());
-
-    controller.setLooping(false);
     await controller.seekTo(start);
-
+    controller.setLooping(false);
+    controller.addListener(() {
+      if (!controller.value.isPlaying) return;
+      final current = controller.value.position;
+      if (current >= end - const Duration(milliseconds: 100)) {
+        channel?.sink.add(jsonEncode({'status': 'done'}));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FinishedScreen(
+              selectedVideo: widget.videoUrl,
+              startTime: widget.startTime,
+              endTime: widget.endTime,
+            ),
+          ),
+        );
+      }
+    });
     if (mounted) {
       setState(() {
         videoController = controller;
       });
     }
-
-    controller.addListener(
-      () {
-        if (!controller.value.isPlaying) return;
-
-        final current = controller.value.position;
-        if (current >= end - const Duration(milliseconds: 100)) {
-          controller.pause();
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => FinishedScreen(
-                  selectedVideo: widget.videoUrl,
-                  startTime: widget.startTime,
-                  endTime: widget.endTime,
-                ),
-              ),
-            );
-          }
-        }
-      },
-    );
   }
 
   @override
   void dispose() {
     cameraController?.dispose();
     videoController?.dispose();
+    channel?.sink.close();
+    _frameTimer?.cancel();
     super.dispose();
   }
 
@@ -156,9 +150,9 @@ class _CameraScreenState extends State<CameraScreen> {
                 if (snapshot.connectionState == ConnectionState.done &&
                     videoController != null) {
                   return CountdownBeforeVideo(
-                    videoController!,
-                    widget.startTime,
-                  );
+                      videoController!, widget.startTime, onInterrupted: () {
+                    channel?.sink.add(jsonEncode({'status': 'interrupted'}));
+                  });
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -169,9 +163,7 @@ class _CameraScreenState extends State<CameraScreen> {
           Expanded(
             child: cameraController?.value.isInitialized ?? false
                 ? RepaintBoundary(
-                    key: cameraKey,
-                    child: CameraPreview(cameraController!),
-                  )
+                    key: cameraKey, child: CameraPreview(cameraController!))
                 : const Center(child: CircularProgressIndicator()),
           ),
         ],

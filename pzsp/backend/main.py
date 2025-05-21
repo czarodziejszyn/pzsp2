@@ -1,35 +1,29 @@
-from fastapi import FastAPI, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from ultralytics import YOLO
-import numpy as np
-import cv2
-from PIL import Image
-import io
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from yolo_utils import process_frame
+import base64
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_json()
 
-model = YOLO("yolov8n-pose.pt")
+            if data.get("status") == "done":
+                print(">>> KONIEC FILMIKU")
+                break
+            elif data.get("status") == "interrupted":
+                print(">>> PRZERWANO FILMIK")
+                break
 
-@app.post("/analyze-frame")
-async def analyze_frame(image: UploadFile = File(...)):
-    contents = await image.read()
+            timestamp = data["timestamp"]
+            image_b64 = data["image"]
+            image_bytes = base64.b64decode(image_b64)
 
-    image_pil = Image.open(io.BytesIO(contents)).convert("RGB")
-    frame = np.array(image_pil)
-
-    results = model(frame)
-
-    keypoints = []
-    for person in results[0].keypoints.xy:
-        keypoints.append(person.cpu().numpy().tolist())
-
-    return {"keypoints": keypoints}
+            results = await process_frame(image_bytes, timestamp)
+            print(f"[{timestamp} ms] {results}")
+    except WebSocketDisconnect:
+        print("WebSocket: Client disconnected.")
 
