@@ -40,13 +40,34 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage films'),
+        title: const Text(
+          'Manage films',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Log out',
-            onPressed: _signOut,
-          )
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0, top: 8.0),
+            child: ElevatedButton.icon(
+              onPressed: _signOut,
+              icon: const Icon(Icons.logout, size: 20),
+              label: const Text(
+                'Log out',
+                style: TextStyle(fontSize: 16),
+              ),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                backgroundColor: Colors.white, // lub inny kolor
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
       body: _items.isEmpty
