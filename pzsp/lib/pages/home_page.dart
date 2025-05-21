@@ -40,6 +40,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
           'Manage films',
           style: TextStyle(
@@ -54,14 +56,11 @@ class _HomePageState extends State<HomePage> {
             child: ElevatedButton.icon(
               onPressed: _signOut,
               icon: const Icon(Icons.logout, size: 20),
-              label: const Text(
-                'Log out',
-                style: TextStyle(fontSize: 16),
-              ),
+              label: const Text('Log out', style: TextStyle(fontSize: 16)),
               style: ElevatedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                backgroundColor: Colors.white, // lub inny kolor
+                backgroundColor: Colors.grey[200],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -70,55 +69,82 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: _items.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _items.length,
-              itemBuilder: (context, index) {
-                final item = _items[index];
-                return Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
+      body: Stack(
+        children: [
+          // Główna zawartość: lista filmów
+          Padding(
+            padding: const EdgeInsets.only(bottom: 80), // miejsce na przyciski
+            child: _items.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _items.length,
+                    itemBuilder: (context, index) {
+                      final item = _items[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          leading: Image.network(
                             item['thumbnail'],
-                            width: 100,
-                            height: 100,
+                            width: 80,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(Icons.broken_image, size: 40),
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.error),
                           ),
+                          title: Text(item['description'] ?? ''),
+                          subtitle: Text('Length: ${item['length']}s'),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item['description'] ?? 'No description',
-                                style: const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              Text('Length: ${item['length']} seconds'),
-                            ],
-                          ),
-                        ),
-                      ],
+                      );
+                    },
+                  ),
+          ),
+
+          // Przyciski na dole
+          Positioned(
+            bottom: 16,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: implement add action
+                  },
+                  icon: const Icon(Icons.add, size: 20),
+                  label:
+                      const Text('Add video', style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                );
-              },
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: implement delete action
+                  },
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  label: const Text('Delete video',
+                      style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    backgroundColor: Colors.grey[200],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
     );
   }
 }
