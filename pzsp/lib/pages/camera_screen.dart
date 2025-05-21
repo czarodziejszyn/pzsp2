@@ -38,7 +38,6 @@ class _CameraScreenState extends State<CameraScreen> {
   VideoPlayerController? videoController;
   late Future<void> videoInitFuture;
   final GlobalKey cameraKey = GlobalKey();
-  late Timer _timer;
 
   @override
   void initState() {
@@ -46,7 +45,7 @@ class _CameraScreenState extends State<CameraScreen> {
     _initializeCamera();
     videoInitFuture = _initializeVideo();
 
-    _timer = Timer.periodic(
+    Timer _timer = Timer.periodic(
       const Duration(milliseconds: 500),
       (_) => _captureAndSendFrame(),
     );
@@ -87,7 +86,11 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _initializeCamera() async {
     await initializeCameras();
     final camera = cameras.first;
-    cameraController = CameraController(camera, ResolutionPreset.medium);
+    cameraController = CameraController(
+      camera,
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
     await cameraController!.initialize();
 
     if (mounted) setState(() {});
@@ -120,7 +123,13 @@ class _CameraScreenState extends State<CameraScreen> {
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const FinishedScreen()),
+              MaterialPageRoute(
+                builder: (_) => FinishedScreen(
+                  selectedVideo: widget.videoUrl,
+                  startTime: widget.startTime,
+                  endTime: widget.endTime,
+                ),
+              ),
             );
           }
         }
