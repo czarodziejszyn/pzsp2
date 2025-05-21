@@ -1,29 +1,48 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from yolo_utils import process_frame
+# Odpalanie:
+# uvicorn main:app --host 0.0.0.0 --port 8000
+from fastapi import FastAPI
+import socketio
 import base64
+from io import BytesIO
+from PIL import Image
 
-app = FastAPI()
+sio = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins="*"
+)
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
+fastapi_app = FastAPI()
+
+app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app)
+
+
+@sio.event
+async def connect(sid, environ):
+    print(f"[CONNECT] {sid}")
+
+@sio.event
+async def disconnect(sid):
+    print(f"[DISCONNECT] {sid}")
+
+@sio.event
+async def frame(sid, data):
     try:
-        while True:
-            data = await websocket.receive_json()
+        import json
+        data = json.loads(data)
+        timestamp = data['timestamp_ms']
+        image_data = data['image']
+        img = Image.open(BytesIO(base64.b64decode(image_data)))
+        print(f"Got frame at {timestamp} ms | size: {img.size}")
+    except Exception as e:
+        print(f"Error processing frame: {e}")
 
-            if data.get("status") == "done":
-                print(">>> KONIEC FILMIKU")
-                break
-            elif data.get("status") == "interrupted":
-                print(">>> PRZERWANO FILMIK")
-                break
-
-            timestamp = data["timestamp"]
-            image_b64 = data["image"]
-            image_bytes = base64.b64decode(image_b64)
-
-            results = await process_frame(image_bytes, timestamp)
-            print(f"[{timestamp} ms] {results}")
-    except WebSocketDisconnect:
-        print("WebSocket: Client disconnected.")
-
+@sio.event
+async def status(sid, data):
+    import json
+    try:
+        data = json.loads(data)
+        print(f"Status: {data['status']}")
+        if data['status'] == 'start':
+            print('Starting at second:', data['time'])
+    except Exception as e:
+        print(f"Error processing status: {e}")

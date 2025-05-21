@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:pzsp/pages/home_page.dart';
@@ -7,9 +6,16 @@ import 'package:pzsp/pages/home_page.dart';
 class CountdownBeforeVideo extends StatefulWidget {
   final VideoPlayerController controller;
   final double startTime;
-  final VoidCallback onInterrupted;
+  final VoidCallback onCountdownFinished;
+  final VoidCallback onVideoInterrupted;
 
-  const CountdownBeforeVideo(this.controller, this.startTime, {super.key, required this.onInterrupted});
+  const CountdownBeforeVideo(
+    this.controller,
+    this.startTime, {
+    required this.onCountdownFinished,
+    required this.onVideoInterrupted,
+    super.key,
+  });
 
   @override
   State<CountdownBeforeVideo> createState() => _CountdownBeforeVideoState();
@@ -29,9 +35,7 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
   void startCountdown() {
     Timer.periodic(const Duration(seconds: 1), (timer) {
       if (countdown > 1) {
-        setState(() {
-          countdown--;
-        });
+        setState(() => countdown--);
       } else if (countdown == 1) {
         setState(() {
           countdown = 0;
@@ -44,23 +48,30 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
             showGo = false;
             videoStarted = true;
           });
-          final start = Duration(seconds: widget.startTime.toInt());
-          widget.controller.seekTo(start).then((_) {
-            Future.delayed(const Duration(milliseconds: 100), () {
-              widget.controller.play();
+
+          if (widget.controller.value.isInitialized) {
+            final startDuration = Duration(seconds: widget.startTime.toInt());
+            widget.controller.seekTo(startDuration).then((_) {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                widget.controller.play();
+                widget.onCountdownFinished(); // zacznij wysyłać ramki
+              });
             });
-          });
+          }
         });
       }
     });
   }
 
   void restartCountdown() {
+    widget.onVideoInterrupted();
+
     setState(() {
       countdown = 3;
       showGo = false;
       videoStarted = false;
     });
+
     startCountdown();
   }
 
@@ -76,7 +87,8 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
                 )
               : Text(
                   showGo ? 'GO!' : '$countdown',
-                  style: const TextStyle(fontSize: 64, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 64, fontWeight: FontWeight.bold),
                 ),
         ),
         if (videoStarted)
@@ -106,41 +118,59 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
 
   Future<void> _showPauseDialog(BuildContext context) async {
     if (!mounted) return;
+
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-        elevation: 16,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          height: 250,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  restartCountdown();
-                },
-                child: const Text("Restart", style: TextStyle(fontSize: 24)),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  widget.onInterrupted(); // Notify Flutter
-                  Navigator.of(context).pop();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomePage()),
-                    (_) => false,
-                  );
-                },
-                child: const Text("Stop", style: TextStyle(fontSize: 24)),
-              ),
-            ],
+      builder: (BuildContext context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          elevation: 16,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            height: 250,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(150, 70),
+                    backgroundColor: Colors.deepPurple,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20.0)),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    restartCountdown();
+                  },
+                  child: const Text("Restart",
+                      style: TextStyle(fontSize: 24, color: Colors.white)),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(150, 70),
+                    backgroundColor: Colors.deepPurple,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20.0)),
+                  ),
+                  onPressed: () {
+                    widget.onVideoInterrupted();
+                    Navigator.of(context).pop();
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HomePage()),
+                      (route) => false,
+                    );
+                  },
+                  child: const Text("Stop",
+                      style: TextStyle(fontSize: 24, color: Colors.white)),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

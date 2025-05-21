@@ -1,16 +1,16 @@
-import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:video_player/video_player.dart';
 import 'package:flutter/rendering.dart';
+import 'package:video_player/video_player.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'dart:async';
 
 import 'finished_screen.dart';
-import '../elements/countdown_element.dart';
+import 'package:pzsp/elements/countdown_element.dart';
 
 late List<CameraDescription> cameras;
 
@@ -40,50 +40,54 @@ class _CameraScreenState extends State<CameraScreen> {
   VideoPlayerController? videoController;
   late Future<void> videoInitFuture;
   final GlobalKey cameraKey = GlobalKey();
-  WebSocketChannel? channel;
+  IO.Socket? channel;
   Timer? _frameTimer;
 
   @override
   void initState() {
     super.initState();
-    _connectWebSocket();
     _initializeCamera();
     videoInitFuture = _initializeVideo();
-    _frameTimer = Timer.periodic(
-      const Duration(milliseconds: 1000),
-      (_) => _captureAndSendFrame(),
-    );
+    _connectSocket();
   }
 
-  void _connectWebSocket() {
-    channel = WebSocketChannel.connect(
-      Uri.parse(
-        'ws://localhost:8000/ws',
-      ),
-    );
+  void _connectSocket() {
+    channel = IO.io('http://localhost:8000',
+        IO.OptionBuilder().setTransports(['websocket']).disableAutoConnect().build());
+    channel?.connect();
+    channel?.emit('status', jsonEncode({'status': 'start', 'time': widget.startTime}));
+
+  }
+
+  void _startSendingFrames() {
+    _frameTimer = Timer.periodic(const Duration(milliseconds: 200), (_) => _captureAndSendFrame());
   }
 
   Future<void> _captureAndSendFrame() async {
+    if (!(videoController?.value.isInitialized ?? false)) return;
+
+    final currentPositionMs = videoController!.value.position.inMilliseconds;
     final frame = await captureCameraFrame();
-    if (frame != null && videoController?.value.isPlaying == true) {
-      final timestampMs = videoController!.value.position.inMilliseconds;
-      final message = {
-        'timestamp': timestampMs,
-        'image': base64Encode(frame),
-      };
-      channel?.sink.add(jsonEncode(message));
+
+    if (frame != null && channel?.connected == true) {
+      final base64Image = base64Encode(frame);
+      final message = jsonEncode({
+        'timestamp_ms': currentPositionMs,
+        'image': base64Image,
+      });
+      channel?.emit('frame', message);
     }
   }
 
   Future<Uint8List?> captureCameraFrame() async {
     try {
-      final boundary =
-          cameraKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final image = await boundary.toImage(pixelRatio: 1.0);
-      final byteData = await image.toByteData(format: ImageByteFormat.png);
+      final boundary = cameraKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+
+      final image = await boundary.toImage(pixelRatio: 0.5); 
+      final byteData = await image.toByteData(format: ImageByteFormat.png); 
       return byteData?.buffer.asUint8List();
     } catch (e) {
-      print('Error capturing frame: $e');
       return null;
     }
   }
@@ -91,25 +95,37 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _initializeCamera() async {
     await initializeCameras();
     final camera = cameras.first;
-    cameraController =
-        CameraController(camera, ResolutionPreset.medium, enableAudio: false);
+    cameraController = CameraController(
+      camera,
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
     await cameraController!.initialize();
     if (mounted) setState(() {});
   }
 
   Future<void> _initializeVideo() async {
-    final controller =
-        VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
     await controller.initialize();
+
     final start = Duration(seconds: widget.startTime.toInt());
     final end = Duration(seconds: widget.endTime.toInt());
-    await controller.seekTo(start);
+
     controller.setLooping(false);
+    await controller.seekTo(start);
+
+    if (mounted) {
+      setState(() => videoController = controller);
+    }
+
     controller.addListener(() {
-      if (!controller.value.isPlaying) return;
       final current = controller.value.position;
-      if (current >= end - const Duration(milliseconds: 100)) {
-        channel?.sink.add(jsonEncode({'status': 'done'}));
+      if (current >= end) {
+        _frameTimer?.cancel();
+        channel?.dispose();
+
+        controller.pause();
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -122,19 +138,20 @@ class _CameraScreenState extends State<CameraScreen> {
         );
       }
     });
-    if (mounted) {
-      setState(() {
-        videoController = controller;
-      });
-    }
+  }
+
+  void handleInterrupted() {
+    _frameTimer?.cancel();
+    channel?.emit('status', jsonEncode({'status': 'interrupted'}));
+    channel?.dispose();
   }
 
   @override
   void dispose() {
     cameraController?.dispose();
     videoController?.dispose();
-    channel?.sink.close();
     _frameTimer?.cancel();
+    channel?.dispose();
     super.dispose();
   }
 
@@ -147,12 +164,13 @@ class _CameraScreenState extends State<CameraScreen> {
             child: FutureBuilder(
               future: videoInitFuture,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done &&
-                    videoController != null) {
+                if (snapshot.connectionState == ConnectionState.done && videoController != null) {
                   return CountdownBeforeVideo(
-                      videoController!, widget.startTime, onInterrupted: () {
-                    channel?.sink.add(jsonEncode({'status': 'interrupted'}));
-                  });
+                    videoController!,
+                    widget.startTime,
+                    onCountdownFinished: _startSendingFrames,
+                    onVideoInterrupted: handleInterrupted,
+                  );
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -163,7 +181,9 @@ class _CameraScreenState extends State<CameraScreen> {
           Expanded(
             child: cameraController?.value.isInitialized ?? false
                 ? RepaintBoundary(
-                    key: cameraKey, child: CameraPreview(cameraController!))
+                    key: cameraKey,
+                    child: CameraPreview(cameraController!),
+                  )
                 : const Center(child: CircularProgressIndicator()),
           ),
         ],

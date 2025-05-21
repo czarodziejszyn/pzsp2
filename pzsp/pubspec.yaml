@@ -19,7 +19,7 @@ dependencies:
   supabase_flutter: ^2.0.0
   image: ^4.0.17
   fl_chart: ^1.0.0
-  web_socket_channel: ^2.4.0
+  socket_io_client: ^2.0.3+1
   http: ^0.13.5
 
 
