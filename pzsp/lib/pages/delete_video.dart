@@ -16,6 +16,21 @@ class _DeleteVideoDialogState extends State<DeleteVideoDialog> {
   bool _isDeleting = false;
   final supabase = Supabase.instance.client;
 
+  String extractStoragePathFromUrl(String url, String bucketName) {
+    final uri = Uri.parse(url);
+    final segments = uri.pathSegments;
+
+    // Znajdź indeks segmentu bucketName
+    final bucketIndex = segments.indexOf(bucketName);
+    if (bucketIndex == -1 || bucketIndex + 1 >= segments.length) {
+      throw Exception('Invalid URL structure or bucket not found in URL');
+    }
+
+    // Klucz to wszystko za bucketName (np. nazwa pliku)
+    final keySegments = segments.sublist(bucketIndex + 1);
+    return keySegments.join('/');
+  }
+
   Future<void> _deleteVideo() async {
     if (_selectedVideo == null) return;
 
@@ -26,14 +41,15 @@ class _DeleteVideoDialogState extends State<DeleteVideoDialog> {
     try {
       // 1. Usuń plik thumbnail
       final thumbUrl = _selectedVideo!['thumbnail'] as String;
-      final thumbPath = Uri.parse(thumbUrl).pathSegments.skip(1).join('/');
+      final thumbPath = extractStoragePathFromUrl(thumbUrl, 'thumbnails');
+
       // Pomijamy pierwszy segment bo to "/" na początku, dostosuj jeśli inna struktura
 
       await supabase.storage.from('thumbnails').remove([thumbPath]);
 
       // 2. Usuń plik video
       final videoUrl = _selectedVideo!['video'] as String;
-      final videoPath = Uri.parse(videoUrl).pathSegments.skip(1).join('/');
+      final videoPath = extractStoragePathFromUrl(videoUrl, 'videos');
 
       await supabase.storage.from('videos').remove([videoPath]);
 
