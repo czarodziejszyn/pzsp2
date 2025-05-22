@@ -23,12 +23,14 @@ class CameraScreen extends StatefulWidget {
   final String videoUrl;
   final double startTime;
   final double endTime;
+  final int videoId;
 
   const CameraScreen({
     super.key,
     required this.videoUrl,
     required this.startTime,
     required this.endTime,
+    required this.videoId,
   });
 
   @override
@@ -40,7 +42,7 @@ class _CameraScreenState extends State<CameraScreen> {
   VideoPlayerController? videoController;
   late Future<void> videoInitFuture;
   final GlobalKey cameraKey = GlobalKey();
-  IO.Socket? channel;
+  late IO.Socket channel;
   Timer? _frameTimer;
 
   @override
@@ -52,15 +54,20 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   void _connectSocket() {
-    channel = IO.io('http://localhost:8000',
-        IO.OptionBuilder().setTransports(['websocket']).disableAutoConnect().build());
-    channel?.connect();
-    channel?.emit('status', jsonEncode({'status': 'start', 'time': widget.startTime}));
-
+    channel = IO.io(
+        'http://localhost:8000',
+        IO.OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .build());
+    channel.connect();
+    channel.emit(
+        'status', jsonEncode({'status': 'start', 'time': widget.startTime, 'id': widget.videoId}));
   }
 
   void _startSendingFrames() {
-    _frameTimer = Timer.periodic(const Duration(milliseconds: 200), (_) => _captureAndSendFrame());
+    _frameTimer = Timer.periodic(
+        const Duration(milliseconds: 200), (_) => _captureAndSendFrame());
   }
 
   Future<void> _captureAndSendFrame() async {
@@ -69,23 +76,24 @@ class _CameraScreenState extends State<CameraScreen> {
     final currentPositionMs = videoController!.value.position.inMilliseconds;
     final frame = await captureCameraFrame();
 
-    if (frame != null && channel?.connected == true) {
+    if (frame != null && channel.connected == true) {
       final base64Image = base64Encode(frame);
       final message = jsonEncode({
         'timestamp_ms': currentPositionMs,
         'image': base64Image,
       });
-      channel?.emit('frame', message);
+      channel.emit('frame', message);
     }
   }
 
   Future<Uint8List?> captureCameraFrame() async {
     try {
-      final boundary = cameraKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary = cameraKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
       if (boundary == null) return null;
 
-      final image = await boundary.toImage(pixelRatio: 0.5); 
-      final byteData = await image.toByteData(format: ImageByteFormat.png); 
+      final image = await boundary.toImage(pixelRatio: 0.5);
+      final byteData = await image.toByteData(format: ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
       return null;
@@ -105,7 +113,8 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> _initializeVideo() async {
-    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    final controller =
+        VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
     await controller.initialize();
 
     final start = Duration(seconds: widget.startTime.toInt());
@@ -122,7 +131,6 @@ class _CameraScreenState extends State<CameraScreen> {
       final current = controller.value.position;
       if (current >= end) {
         _frameTimer?.cancel();
-        channel?.dispose();
 
         controller.pause();
 
@@ -133,6 +141,8 @@ class _CameraScreenState extends State<CameraScreen> {
               selectedVideo: widget.videoUrl,
               startTime: widget.startTime,
               endTime: widget.endTime,
+              channel: channel,
+              videoId: widget.videoId,
             ),
           ),
         );
@@ -142,8 +152,8 @@ class _CameraScreenState extends State<CameraScreen> {
 
   void handleInterrupted() {
     _frameTimer?.cancel();
-    channel?.emit('status', jsonEncode({'status': 'interrupted'}));
-    channel?.dispose();
+    channel.emit('status', jsonEncode({'status': 'interrupted'}));
+    channel.dispose();
   }
 
   @override
@@ -151,7 +161,7 @@ class _CameraScreenState extends State<CameraScreen> {
     cameraController?.dispose();
     videoController?.dispose();
     _frameTimer?.cancel();
-    channel?.dispose();
+    channel.dispose();
     super.dispose();
   }
 
@@ -164,7 +174,8 @@ class _CameraScreenState extends State<CameraScreen> {
             child: FutureBuilder(
               future: videoInitFuture,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done && videoController != null) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    videoController != null) {
                   return CountdownBeforeVideo(
                     videoController!,
                     widget.startTime,

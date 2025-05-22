@@ -73,6 +73,7 @@ class _HomePageState extends State<HomePage> {
           selectedVideo: _items[_currentIndex]['video'],
           danceDescription: _items[_currentIndex]['description'],
           length: _items[_currentIndex]['length'],
+          id: _items[_currentIndex]['id'],
         ),
       ),
     );

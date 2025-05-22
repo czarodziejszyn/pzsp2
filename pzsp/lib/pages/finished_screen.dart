@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-// import 'package:http/http.dart' as http;
-// import 'dart:convert';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:pzsp/pages/camera_screen.dart';
 import 'home_page.dart';
@@ -9,12 +9,16 @@ class FinishedScreen extends StatefulWidget {
   final String selectedVideo;
   final double startTime;
   final double endTime;
+  final IO.Socket channel;
+  final int videoId;
 
   const FinishedScreen({
     super.key,
     required this.selectedVideo,
     required this.startTime,
     required this.endTime,
+    required this.channel,
+    required this.videoId,
   });
 
   @override
@@ -30,26 +34,9 @@ class _FinishedScreenState extends State<FinishedScreen> {
     fetchStatistics();
   }
 
-  // Future<void> fetchStatistics() async {
-  //   final response = await http.post(
-  //     Uri.parse('http://localhost:8000/analyze-frame'),
-  //     headers: {'Content-Type': 'multipart/form-data'},
-  //     body: {},
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     final decoded = json.decode(response.body);
-  //     setState(() {
-  //       keypointStats = decoded['keypoints']
-  //           .map<double>((kps) => kps.length.toDouble())
-  //           .toList();
-  //     });
-  //   } else {
-  //     print("Error fetching stats: ${response.body}");
-  //   }
-  // }
-
   Future<void> fetchStatistics() async {
+    widget.channel.emit('status', jsonEncode({'status': 'done'}));
+
     // Sztuczne dane pzdr
     await Future.delayed(
       const Duration(
@@ -60,6 +47,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
     setState(() {
       keypointStats = [90, 75, 85, 95, 80, 70, 88, 92, 30, 84];
     });
+    widget.channel.dispose();
   }
 
   void restartDance() {
@@ -70,6 +58,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
           videoUrl: widget.selectedVideo,
           startTime: widget.startTime,
           endTime: widget.endTime,
+          videoId: widget.videoId,
         ),
       ),
     );
