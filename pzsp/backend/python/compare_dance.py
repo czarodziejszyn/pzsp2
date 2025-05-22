@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import csv
-from algorithm import pose_angle_score
+from .algorithm import pose_angle_score
 
 SELECTED_INDICES = [7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 POSE_POINTS = 33

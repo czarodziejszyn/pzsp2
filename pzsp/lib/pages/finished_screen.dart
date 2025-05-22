@@ -26,7 +26,7 @@ class FinishedScreen extends StatefulWidget {
 }
 
 class _FinishedScreenState extends State<FinishedScreen> {
-  List<double> keypointStats = [];
+  List<int> keypointStats = [];
 
   @override
   void initState() {
@@ -34,21 +34,21 @@ class _FinishedScreenState extends State<FinishedScreen> {
     fetchStatistics();
   }
 
-  Future<void> fetchStatistics() async {
-    widget.channel.emit('status', jsonEncode({'status': 'done'}));
+Future<void> fetchStatistics() async {
+  widget.channel.emit('status', jsonEncode({'status': 'done'}));
 
-    // Sztuczne dane pzdr
-    await Future.delayed(
-      const Duration(
-        milliseconds: 500,
-      ),
-    ); // symulacja opóźnienia
+  widget.channel.on('result', (data) {
+    List<int> results = List<int>.from(data);
 
     setState(() {
-      keypointStats = [90, 75, 85, 95, 80, 70, 88, 92, 30, 84];
+      keypointStats = results;
     });
+
+    widget.channel.off('result');
     widget.channel.dispose();
-  }
+  });
+}
+
 
   void restartDance() {
     Navigator.pushReplacement(
@@ -106,7 +106,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
             spots: keypointStats
                 .asMap()
                 .entries
-                .map((e) => FlSpot(e.key.toDouble(), e.value))
+                .map((e) => FlSpot(e.key.toDouble(), e.value.toDouble()))
                 .toList(),
             isCurved: true,
             barWidth: 4,

@@ -4,3 +4,5 @@ ultralytics
 pillow
 numpy
 opencv-python
+mediapipe
+python-socketio
