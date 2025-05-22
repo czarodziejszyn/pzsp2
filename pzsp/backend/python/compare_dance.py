@@ -4,6 +4,30 @@ import numpy as np
 import csv
 from .algorithm import pose_angle_score
 
+import requests
+import os
+
+def get_csv(supabase_url):
+    filename = os.path.basename(supabase_url)
+    save_path = os.path.join("tmp", filename)
+
+    os.makedirs("tmp", exist_ok=True)
+
+    try:
+        response = requests.get(supabase_url)
+        response.raise_for_status()
+
+        with open(save_path, "wb") as f:
+            f.write(response.content)
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Download error: {e}")
+    except IOError as e:
+        print(f"saving error: {e}")
+
+    return save_path
+
+
 SELECTED_INDICES = [7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 POSE_POINTS = 33
 POSE_DIM = 2  # x, y
