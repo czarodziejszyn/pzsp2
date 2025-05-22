@@ -2,36 +2,40 @@ import cv2
 import mediapipe as mp
 import csv
 
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose(static_image_mode=False, model_complexity=1)
-mp_drawing = mp.solutions.drawing_utils
-
-cap = cv2.VideoCapture('dance_video.mp4')
-
-with open('dance_landmarks.csv', mode='w', newline='') as csv_file:
-    csv_writer = csv.writer(csv_file)
+def extract_pose_landmarks(video_path, output_csv='dance_landmarks.csv'):
+    mp_pose = mp.solutions.pose
+    pose = mp_pose.Pose(static_image_mode=False, model_complexity=1)
     
-    headers = ['frame']
-    for i in range(33):
-        headers += [f'x_{i}', f'y_{i}', f'z_{i}', f'visibility_{i}']
-    csv_writer.writerow(headers)
+    selected_indices = [7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 
-    frame_num = 0
+    cap = cv2.VideoCapture(video_path)
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
+    with open(output_csv, mode='w', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file)
 
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = pose.process(frame_rgb)
+        headers = ['frame']
+        for i in selected_indices:
+            headers += [f'x_{i}', f'y_{i}']
+        csv_writer.writerow(headers)
 
-        if results.pose_landmarks:
-            row = [frame_num]
-            for landmark in results.pose_landmarks.landmark:
-                row.extend([landmark.x, landmark.y, landmark.z, landmark.visibility])
-            csv_writer.writerow(row)
+        frame_num = 0
 
-        frame_num += 1
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-cap.release()
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = pose.process(frame_rgb)
+
+            if results.pose_landmarks:
+                row = [frame_num]
+                for i in selected_indices:
+                    landmark = results.pose_landmarks.landmark[i]
+                    row.extend([landmark.x, landmark.y])
+                csv_writer.writerow(row)
+
+            frame_num += 1
+
+    cap.release()
+
