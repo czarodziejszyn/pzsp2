@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login_page.dart';
 import 'add_video.dart';
+import 'edit_video.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -105,7 +106,6 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Stack(
         children: [
-          // Lista filmów
           Padding(
             padding: const EdgeInsets.only(bottom: 80),
             child: _items.isEmpty
@@ -127,42 +127,60 @@ class _HomePageState extends State<HomePage> {
                           ),
                           title: Text(item['description'] ?? ''),
                           subtitle: Text('Length: ${item['length']}s'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.grey),
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Delete video'),
-                                  content: const Text(
-                                      'Are you sure you want to delete this video?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit,
+                                    color: Colors.deepPurple),
+                                onPressed: () async {
+                                  final result = await showDialog<bool>(
+                                    context: context,
+                                    builder: (_) =>
+                                        EditVideoDialog(video: item),
+                                  );
+                                  if (result == true) {
+                                    await fetchItems(); // odśwież dane
+                                  }
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.grey),
+                                onPressed: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Delete video'),
+                                      content: const Text(
+                                          'Are you sure you want to delete this video?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(true),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
                                     ),
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(true),
-                                      child: const Text('Delete'),
-                                    ),
-                                  ],
-                                ),
-                              );
+                                  );
 
-                              if (confirm == true) {
-                                await deleteVideoItem(item);
-                              }
-                            },
+                                  if (confirm == true) {
+                                    await deleteVideoItem(item);
+                                  }
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       );
                     },
                   ),
           ),
-
-          // Przyciski dolne
           Positioned(
             bottom: 16,
             left: 0,
