@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 def compare_points(camera_points, video_points):
     return score
 
+def process_image(film_id, start_sec, image_data, offset):
+    pass
+
 VIDEO_PATH = "dance_video.mp4"
 CSV_PATH = "dance_landmarks.csv"
 WINDOW_NAME = "Live Dance Comparison"
