@@ -59,7 +59,7 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
     try {
       // 1. Upload thumbnail
       final thumbPath =
-          'thumbnails/${DateTime.now().millisecondsSinceEpoch}_${_thumbnailFile!.name}';
+          '${DateTime.now().millisecondsSinceEpoch}_${_thumbnailFile!.name}';
       final thumbUploadResponse =
           await supabase.storage.from('thumbnails').uploadBinary(
                 thumbPath,
@@ -69,7 +69,7 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
 
       // 2. Upload video
       final videoPath =
-          'videos/${DateTime.now().millisecondsSinceEpoch}_${_videoFile!.name}';
+          '${DateTime.now().millisecondsSinceEpoch}_${_videoFile!.name}';
       final videoUploadResponse =
           await supabase.storage.from('videos').uploadBinary(
                 videoPath,

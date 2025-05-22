@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login_page.dart';
 import 'add_video.dart';
+import 'delete_video.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -133,8 +134,20 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: implement delete action
+                  onPressed: () async {
+                    if (_items.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No videos to delete')),
+                      );
+                      return;
+                    }
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => DeleteVideoDialog(videos: _items),
+                    );
+                    if (result == true) {
+                      await fetchItems(); // odśwież listę po usunięciu
+                    }
                   },
                   icon: const Icon(Icons.delete_outline, size: 20),
                   label: const Text('Delete video',
