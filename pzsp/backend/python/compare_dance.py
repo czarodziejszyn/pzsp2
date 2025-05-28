@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import csv
-from .algorithm import pose_angle_score
+from algorithm import pose_angle_score
 
 import requests
 import os
@@ -71,7 +71,7 @@ def process_image(film_id, start_sec, image_data, offset_ms):
         return 0.0
 
     video_pose = data["motion"][frame_number]
-    video_selected = np.array([video_pose[i] for i in SELECTED_INDICES])
+    video_selected = np.array([video_pose[i] for i in range(len(SELECTED_INDICES))])
 
     image_rgb = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     results = pose.process(image_rgb)
