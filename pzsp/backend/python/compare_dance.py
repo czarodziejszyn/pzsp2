@@ -43,11 +43,14 @@ def load_pose_csv(csv_path):
     with open(csv_path, newline='') as csvfile:
         reader = csv.reader(csvfile)
         headers = next(reader)
+        
+        num_points = len(SELECTED_INDICES)
+        
         for row in reader:
             frame_vector = []
-            for i in range(POSE_POINTS):
-                x = float(row[1 + i * 4])
-                y = float(row[2 + i * 4])
+            for i in range(num_points):
+                x = float(row[1 + i * 2])
+                y = float(row[2 + i * 2])
                 frame_vector.append((x, y))
             pose_sequence.append(frame_vector)
     return np.array(pose_sequence)

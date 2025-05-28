@@ -68,14 +68,14 @@ async def frame(sid, data):
             print(f"[WARN] Frame received before session start from {sid}")
             return
 
-        # Process image
-        # result = process_image(
-        #     session["id"],
-        #     session["start_sec"],
-        #     image_data,
-        #     timestamp
-        # )
-        # session["results"].append(result)
+        Process image
+        result = process_image(
+            session["id"],
+            session["start_sec"],
+            img,
+            timestamp
+        )
+        session["results"].append(result)
         result = randint(0, 100)
         session["results"].append(result)
         print(f"[FRAME] Time: {timestamp}ms | Result: {result}")
