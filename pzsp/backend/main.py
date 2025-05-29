@@ -31,10 +31,12 @@ async def connect(sid, environ):
         "results": []
     }
 
+
 @sio.event
 async def disconnect(sid):
     print(f"[DISCONNECT] {sid}")
     sessions.pop(sid, None)
+
 
 @sio.event
 async def status(sid, data):
@@ -55,6 +57,7 @@ async def status(sid, data):
     except Exception as e:
         print(f"[ERROR][status] {e}")
 
+
 @sio.event
 async def frame(sid, data):
     try:
@@ -68,7 +71,6 @@ async def frame(sid, data):
             print(f"[WARN] Frame received before session start from {sid}")
             return
 
-        Process image
         result = process_image(
             session["id"],
             session["start_sec"],
@@ -82,4 +84,3 @@ async def frame(sid, data):
 
     except Exception as e:
         print(f"[ERROR][frame] {e}")
-

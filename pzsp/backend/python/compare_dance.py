@@ -2,10 +2,11 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import csv
-from algorithm import pose_angle_score
+from .algorithm import pose_angle_score
 
 import requests
 import os
+
 
 def get_csv(supabase_url):
     filename = os.path.basename(supabase_url)
@@ -19,7 +20,7 @@ def get_csv(supabase_url):
 
         with open(save_path, "wb") as f:
             f.write(response.content)
-        
+
     except requests.exceptions.RequestException as e:
         print(f"Download error: {e}")
     except IOError as e:
@@ -38,14 +39,15 @@ motion_cache = {}
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose(static_image_mode=True)
 
+
 def load_pose_csv(csv_path):
     pose_sequence = []
     with open(csv_path, newline='') as csvfile:
         reader = csv.reader(csvfile)
-        headers = next(reader)
-        
+        _ = next(reader)
+
         num_points = len(SELECTED_INDICES)
-        
+
         for row in reader:
             frame_vector = []
             for i in range(num_points):
@@ -54,6 +56,7 @@ def load_pose_csv(csv_path):
                 frame_vector.append((x, y))
             pose_sequence.append(frame_vector)
     return np.array(pose_sequence)
+
 
 def process_image(film_id, start_sec, image_data, offset_ms):
     if film_id not in motion_cache:
@@ -71,8 +74,11 @@ def process_image(film_id, start_sec, image_data, offset_ms):
         return 0.0
 
     video_pose = data["motion"][frame_number]
-    video_selected = np.array([video_pose[i] for i in range(len(SELECTED_INDICES))])
+    video_selected = np.array([video_pose[i]
+                              for i in range(len(SELECTED_INDICES))])
 
+    print(type(image_data))
+    image_data = np.array(image_data)
     image_rgb = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
     results = pose.process(image_rgb)
 
@@ -80,7 +86,7 @@ def process_image(film_id, start_sec, image_data, offset_ms):
         return 0.0
 
     camera_pose = results.pose_landmarks.landmark
-    camera_selected = np.array([[camera_pose[i].x, camera_pose[i].y] for i in SELECTED_INDICES])
+    camera_selected = np.array(
+        [[camera_pose[i].x, camera_pose[i].y] for i in SELECTED_INDICES])
 
     return pose_angle_score(camera_selected, video_selected)
-
