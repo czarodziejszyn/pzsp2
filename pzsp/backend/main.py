@@ -7,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 from python.compare_dance import process_image
 from random import randint
+from python.video_to_csv import extract_pose_landmarks
 
 
 import json
@@ -84,3 +85,19 @@ async def frame(sid, data):
 
     except Exception as e:
         print(f"[ERROR][frame] {e}")
+
+
+@sio.event
+async def new_video_uploaded(sid, data):
+    try:
+        data = json.loads(data)
+        video_name = data.get("filename")
+
+        print(f"[NEW VIDEO] Otrzymano plik: {video_name}")
+
+        # trzeba pobrać mp4, wtedy wytworzyć csv i to csv zapisać w supabase
+        video_path, output_csv = "", ""
+        extract_pose_landmarks(video_path, output_csv)
+
+    except Exception as e:
+        print(f"[ERROR][new_video_uploaded] {e}")
