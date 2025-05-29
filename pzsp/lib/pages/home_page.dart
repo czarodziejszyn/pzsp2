@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'video_selection.dart';
+import 'package:pzsp/constants.dart';
 
 
 // https://meompxrfkofzbxjwjpvr.supabase.co/storage/v1/object/sign/thumbnails/168.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2E1NTNkOGVjLTgyYzUtNGM2Mi05NTg1LThhZTU1ZDRjYjJlOSJ9.eyJ1cmwiOiJ0aHVtYm5haWxzLzE2OC5qcGciLCJpYXQiOjE3NDc2NjM3ODEsImV4cCI6MTc3OTE5OTc4MX0.MtdPx_0e_i3doZ63fR70-f4qZ7uLsS130-FmYKBMfzU
@@ -22,20 +23,6 @@ class _HomePageState extends State<HomePage> {
 
   List<Map<String, dynamic>> _items = [];
 
-  Future<String?> fetchFirstThumbnail() async {
-    final response = await Supabase.instance.client
-        .from('videos')
-        .select('description')  // Pobieramy tylko kolumnę 'thumbnail'
-        .limit(1)  // Ograniczamy do 1 wiersza
-        .single();  // Zwracamy pojedynczy rekord
-
-    if (response != null && response['description'] != null) {
-      return response['description'];
-    } else {
-      return null;
-    }
-  }
-
 
 
 
@@ -54,7 +41,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchItems() async {
     final response = await Supabase.instance.client
-        .from('videos')
+        .from('dance_info')
         .select();
 
     setState(() {
@@ -69,8 +56,8 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(
         builder: (context) => VideoSelectionPage(
-          selectedImage: _items[_currentIndex]['thumbnail'],
-          selectedVideo: _items[_currentIndex]['video'],
+          selectedImage: '$supabaseUrl$supabaseBuckerDir/thumbnails/${_items[_currentIndex]['title']}.jpg',
+          selectedVideo: '$supabaseUrl$supabaseBuckerDir/videos/${_items[_currentIndex]['title']}.mp4',
           danceDescription: _items[_currentIndex]['description'],
           length: _items[_currentIndex]['length'],
           id: _items[_currentIndex]['id'],
@@ -93,6 +80,7 @@ class _HomePageState extends State<HomePage> {
                   ? const Center(child: CircularProgressIndicator())
                   : CarouselSlider(
                       items: _items.map((item) {
+
                         return Builder(
                           builder: (BuildContext context) {
                             return Column(
@@ -101,7 +89,7 @@ class _HomePageState extends State<HomePage> {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(
-                                      item['thumbnail'], 
+                                      '$supabaseUrl$supabaseBuckerDir/thumbnails/${item['title']}.jpg',
                                       fit: BoxFit.cover,
                                       errorBuilder: (context, error, stackTrace) {
                                         return const Center(
