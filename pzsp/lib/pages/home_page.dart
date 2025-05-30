@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => VideoSelectionPage(
           selectedImage: '$supabaseUrl$supabaseBuckerDir/thumbnails/${_items[_currentIndex]['title']}.jpg',
           selectedVideo: '$supabaseUrl$supabaseBuckerDir/videos/${_items[_currentIndex]['title']}.mp4',
-          selectedCsv: '$supabaseUrl$supabaseBuckerDir/pose-points/${_items[_currentIndex]['title']}.csv',
+          title: _items[_currentIndex]['title'],
           danceDescription: _items[_currentIndex]['description'],
           length: _items[_currentIndex]['length'],
         ),
