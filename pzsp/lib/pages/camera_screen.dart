@@ -88,14 +88,11 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<Uint8List?> captureCameraFrame() async {
     try {
-      final boundary = cameraKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return null;
-
-      final image = await boundary.toImage(pixelRatio: 0.5);
-      final byteData = await image.toByteData(format: ImageByteFormat.png);
-      return byteData?.buffer.asUint8List();
+      final image = await cameraController?.takePicture();
+      if (image == null) return null;
+      return await image.readAsBytes();
     } catch (e) {
+      print("Capture error: $e");
       return null;
     }
   }

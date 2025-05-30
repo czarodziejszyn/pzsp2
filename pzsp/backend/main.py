@@ -5,9 +5,12 @@ import socketio
 import base64
 from io import BytesIO
 from PIL import Image
-from python.compare_dance import process_image
-from random import randint
+from python.compare_dance import process_image, get_csv, motion_cache, load_pose_csv, DEFAULT_FRAME_RATE
 from python.video_to_csv import extract_pose_landmarks
+import os
+import uuid
+import numpy as np
+import cv2
 
 
 import json
@@ -43,17 +46,44 @@ async def disconnect(sid):
 async def status(sid, data):
     try:
         data = json.loads(data)
+        print(data)
         status = data.get('status')
+        print(status)
         if status == 'start':
-            sessions[sid]["csvPath"] = int(data['csvPath'])
-            sessions[sid]["start_sec"] = int(data['time'])
-            sessions[sid]["results"] = []
-            print(f"[START] Film ID: {sessions[sid]['id']}, Start at: {sessions[sid]['start_sec']}s")
+            csv_url = data.get("csvPath")
+            print(csv_url)
+            film_id = data.get("id")
+            print(film_id)
+            start_sec = int(data.get("time", 0))
+            print(start_sec)
+
+            local_path = get_csv(csv_url)
+            motion = load_pose_csv(local_path)
+            film_id = str(uuid.uuid4())
+
+            motion_cache[film_id] = {
+                "motion": motion,
+                "fps": DEFAULT_FRAME_RATE
+            }
+
+            sessions[sid] = {
+                "id": film_id,
+                "start_sec": start_sec,
+                "results": []
+            }
 
         elif status == 'done':
             print(f"[] Sending results to {sid}")
             print(sessions[sid]["results"])
             await sio.emit("result", sessions[sid]["results"], to=sid)
+
+            try:
+                csv_path = sessions[sid].get("csv_path")
+                if csv_path and os.path.exists(csv_path):
+                    os.remove(csv_path)
+                    print("CSV FILE DELETED")
+            except Exception as cleanup_err:
+                print(f"[ERROR] {cleanup_err}")
 
     except Exception as e:
         print(f"[ERROR][status] {e}")
@@ -65,7 +95,12 @@ async def frame(sid, data):
         data = json.loads(data)
         timestamp = int(data['timestamp_ms'])
         image_data = base64.b64decode(data['image'])
-        img = Image.open(BytesIO(image_data))
+
+        img = Image.open(BytesIO(image_data)).convert("RGB")
+        img_np = np.array(img)
+        img_cv2 = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
+        print(f"Obraz: shape={img_cv2.shape}, dtype={img_cv2.dtype}")
 
         session = sessions.get(sid)
         if not session or session["id"] is None:
@@ -75,11 +110,9 @@ async def frame(sid, data):
         result = process_image(
             session["id"],
             session["start_sec"],
-            img,
+            img_cv2,
             timestamp
         )
-        session["results"].append(result)
-        result = randint(0, 100)
         session["results"].append(result)
         print(f"[FRAME] Time: {timestamp}ms | Result: {result}")
 
