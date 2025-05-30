@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/rendering.dart';
+import 'package:pzsp/models/dance_video_selection.dart';
 import 'package:video_player/video_player.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:async';
@@ -20,17 +21,16 @@ Future<void> initializeCameras() async {
 }
 
 class CameraScreen extends StatefulWidget {
-  final String videoUrl;
+  final DanceVideoSelection selection;
   final double startTime;
   final double endTime;
-  final String title;
+
 
   const CameraScreen({
     super.key,
-    required this.videoUrl,
+    required this.selection,
     required this.startTime,
     required this.endTime,
-    required this.title,
   });
 
   @override
@@ -62,7 +62,7 @@ class _CameraScreenState extends State<CameraScreen> {
             .build());
     channel.connect();
     channel.emit(
-        'status', jsonEncode({'status': 'start', 'time': widget.startTime, 'title': widget.title}));
+        'status', jsonEncode({'status': 'start', 'time': widget.startTime, 'title': widget.selection.title}));
   }
 
   void _startSendingFrames() {
@@ -114,7 +114,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _initializeVideo() async {
     final controller =
-        VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+        VideoPlayerController.networkUrl(Uri.parse(widget.selection.videoUrl));
     await controller.initialize();
 
     final start = Duration(seconds: widget.startTime.toInt());
@@ -138,11 +138,10 @@ class _CameraScreenState extends State<CameraScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => FinishedScreen(
-              selectedVideo: widget.videoUrl,
+              selection: widget.selection,
               startTime: widget.startTime,
               endTime: widget.endTime,
               channel: channel,
-              title: widget.title,
             ),
           ),
         );
