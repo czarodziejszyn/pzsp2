@@ -21,7 +21,8 @@ dependencies:
   fl_chart: ^1.0.0
   socket_io_client: ^2.0.3+1
   http: ^0.13.5
-  file_picker: ^5.2.7
+  provider: ^6.1.5
+  file_picker: ^6.1.1
 
 
 
@@ -33,6 +34,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  assets:
-    - assets/videos/my_video.mp4
-    - assets/videos/short_video.mp4
+  # assets:
+  #   - assets/videos/my_video.mp4
+  #   - assets/videos/short_video.mp4
