@@ -104,7 +104,7 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
               ),
               child: IconButton(
                 iconSize: 48,
-                icon: const Icon(Icons.pause, color: Colors.white),
+                icon: const Icon(Icons.stop, color: Colors.white),
                 onPressed: () async {
                   await widget.controller.pause();
                   await _showPauseDialog(context);
