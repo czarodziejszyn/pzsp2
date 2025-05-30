@@ -10,7 +10,7 @@ class FinishedScreen extends StatefulWidget {
   final double startTime;
   final double endTime;
   final IO.Socket channel;
-  final String csvPath;
+  final String title;
 
   const FinishedScreen({
     super.key,
@@ -18,7 +18,7 @@ class FinishedScreen extends StatefulWidget {
     required this.startTime,
     required this.endTime,
     required this.channel,
-    required this.csvPath,
+    required this.title,
   });
 
   @override
@@ -58,7 +58,7 @@ Future<void> fetchStatistics() async {
           videoUrl: widget.selectedVideo,
           startTime: widget.startTime,
           endTime: widget.endTime,
-          csvPath: widget.csvPath,
+          title: widget.title,
         ),
       ),
     );

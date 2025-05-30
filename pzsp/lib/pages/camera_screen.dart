@@ -23,14 +23,14 @@ class CameraScreen extends StatefulWidget {
   final String videoUrl;
   final double startTime;
   final double endTime;
-  final String csvPath;
+  final String title;
 
   const CameraScreen({
     super.key,
     required this.videoUrl,
     required this.startTime,
     required this.endTime,
-    required this.csvPath,
+    required this.title,
   });
 
   @override
@@ -62,7 +62,7 @@ class _CameraScreenState extends State<CameraScreen> {
             .build());
     channel.connect();
     channel.emit(
-        'status', jsonEncode({'status': 'start', 'time': widget.startTime, 'csvPath': widget.csvPath}));
+        'status', jsonEncode({'status': 'start', 'time': widget.startTime, 'title': widget.title}));
   }
 
   void _startSendingFrames() {
@@ -139,7 +139,7 @@ class _CameraScreenState extends State<CameraScreen> {
               startTime: widget.startTime,
               endTime: widget.endTime,
               channel: channel,
-              csvPath: widget.csvPath,
+              title: widget.title,
             ),
           ),
         );
