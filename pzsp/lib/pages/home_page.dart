@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:pzsp/controllers/auth_controller.dart';
 import 'login_page.dart';
 import 'add_video.dart';
 import 'edit_video.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,8 +14,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final supabase = Supabase.instance.client;
   List<Map<String, dynamic>> _items = [];
+  final supabase = Supabase.instance.client;
 
   @override
   void initState() {
@@ -53,7 +55,7 @@ class _HomePageState extends State<HomePage> {
         const SnackBar(content: Text('Video deleted')),
       );
 
-      await fetchItems(); // refresh list
+      await fetchItems();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error deleting video: $e')),
@@ -62,11 +64,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _signOut() async {
-    await supabase.auth.signOut();
+    final authController = Provider.of<AuthController>(context, listen: false);
+    await authController.signOut();
+
     if (mounted) {
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
       );
     }
   }
@@ -140,7 +145,7 @@ class _HomePageState extends State<HomePage> {
                                         EditVideoDialog(video: item),
                                   );
                                   if (result == true) {
-                                    await fetchItems(); // odśwież dane
+                                    await fetchItems();
                                   }
                                 },
                               ),
@@ -185,32 +190,30 @@ class _HomePageState extends State<HomePage> {
             bottom: 16,
             left: 0,
             right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    final result = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => const AddVideoDialog(),
-                    );
-                    if (result == true) {
-                      await fetchItems();
-                    }
-                  },
-                  icon: const Icon(Icons.add, size: 20),
-                  label:
-                      const Text('Add video', style: TextStyle(fontSize: 16)),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+            child: Center(
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final added = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => const AddVideoDialog(),
+                  );
+                  if (added == true) {
+                    await fetchItems();
+                  }
+                },
+                icon: const Icon(Icons.add, size: 30),
+                label: const Text(
+                  'Add video',
+                  style: TextStyle(fontSize: 24),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],

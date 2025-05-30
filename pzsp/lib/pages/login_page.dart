@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:pzsp/controllers/auth_controller.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,36 +13,28 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _supabase = Supabase.instance.client;
 
-  String? errorMessage;
+  @override
+  Widget build(BuildContext context) {
+    final authController = Provider.of<AuthController>(context);
 
-  Future<void> _signIn() async {
-    try {
-      await _supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+    Future<void> _signIn() async {
+      final success = await authController.signIn(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
-      if (mounted) {
+      if (success && mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),
         );
       }
-    } on AuthException catch (e) {
-      setState(() => errorMessage = e.message);
-    } catch (e) {
-      setState(() => errorMessage = 'Wystąpił nieznany błąd');
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(vertical: 48), // margines góra/dół
+          padding: const EdgeInsets.symmetric(vertical: 48),
           child: AspectRatio(
             aspectRatio: 3 / 4,
             child: Container(
@@ -92,11 +85,11 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
-                    onPressed: _signIn,
+                    onPressed: authController.isLoading ? null : _signIn,
                     icon: const Icon(Icons.login, size: 30),
-                    label: const Text(
-                      'Log in',
-                      style: TextStyle(fontSize: 24),
+                    label: Text(
+                      authController.isLoading ? 'Loading...' : 'Log in',
+                      style: const TextStyle(fontSize: 24),
                     ),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -106,10 +99,10 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  if (errorMessage != null) ...[
+                  if (authController.errorMessage != null) ...[
                     const SizedBox(height: 16),
                     Text(
-                      errorMessage!,
+                      authController.errorMessage!,
                       style: const TextStyle(color: Colors.red),
                     ),
                   ],
