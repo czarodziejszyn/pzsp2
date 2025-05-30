@@ -1,21 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:pzsp/models/dance_video_selection.dart';
 import 'package:pzsp/pages/camera_screen.dart';
 
 class VideoSelectionPage extends StatefulWidget {
-  final String selectedImage;
-  final String danceDescription;
-  final String selectedVideo;
-  final double length;
-  final String title;
-  
-  const VideoSelectionPage({
-    super.key,
-    required this.selectedImage,
-    required this.danceDescription,
-    required this.selectedVideo,
-    required this.length,
-    required this.title,
-  });
+  final DanceVideoSelection selection;
+
+  const VideoSelectionPage({super.key, required this.selection});
 
   @override
   State<VideoSelectionPage> createState() => _VideoSelectionPageState();
@@ -23,14 +13,13 @@ class VideoSelectionPage extends StatefulWidget {
 
 class _VideoSelectionPageState extends State<VideoSelectionPage> {
   late RangeValues _currentRangeValues;
-  late double _maxDuration;
   final double _minRange = 10.0;
 
   @override
   void initState() {
     super.initState();
-    _maxDuration = widget.length.toDouble();
-    _currentRangeValues = RangeValues(0, _maxDuration);
+    final max = widget.selection.length.toDouble();
+    _currentRangeValues = RangeValues(0, max);
   }
 
   void _onNextButtonPressed() {
@@ -38,10 +27,9 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
       context,
       MaterialPageRoute(
         builder: (context) => CameraScreen(
-          videoUrl: widget.selectedVideo,
+          selection: widget.selection,
           startTime: _currentRangeValues.start,
           endTime: _currentRangeValues.end,
-          title: widget.title,
         ),
       ),
     );
@@ -49,10 +37,10 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = widget.selection;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.danceDescription),
-      ),
+      appBar: AppBar(title: Text(s.title)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -61,12 +49,10 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
-                  widget.selectedImage,
+                  s.imageUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.error, size: 100),
-                    );
+                    return const Center(child: Icon(Icons.error, size: 100));
                   },
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -86,22 +72,21 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
             Text(
               'Select video fragment (${_currentRangeValues.end - _currentRangeValues.start} seconds)',
               style: const TextStyle(fontSize: 18),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             RangeSlider(
               values: _currentRangeValues,
               min: 0,
-              max: _maxDuration,
-              divisions: _maxDuration.toInt(),
+              max: s.length,
+              divisions: s.length.toInt(),
               labels: RangeLabels(
                 '${_currentRangeValues.start.round()}s',
                 '${_currentRangeValues.end.round()}s',
               ),
-              onChanged: (RangeValues values) {
+              onChanged: (values) {
                 if (values.end - values.start >= _minRange) {
-                  setState(() {
-                    _currentRangeValues = values;
-                  });
+                  setState(() => _currentRangeValues = values);
                 }
               },
             ),
@@ -121,3 +106,4 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
     );
   }
 }
+
