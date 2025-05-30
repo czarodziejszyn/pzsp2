@@ -50,14 +50,14 @@ async def status(sid, data):
         status = data.get('status')
         print(status)
         if status == 'start':
-            csv_url = data.get("csvPath")
-            print(csv_url)
+            title = data.get("title")
+            print(title)
             film_id = data.get("id")
             print(film_id)
             start_sec = int(data.get("time", 0))
             print(start_sec)
 
-            local_path = get_csv(csv_url)
+            local_path = get_csv(title)
             motion = load_pose_csv(local_path)
             film_id = str(uuid.uuid4())
 

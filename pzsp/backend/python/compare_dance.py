@@ -1,30 +1,32 @@
-import cv2
 import mediapipe as mp
 import numpy as np
 import csv
 from .algorithm import pose_angle_score
+from supabase import create_client
 
-import requests
-import os
+url = "https://meompxrfkofzbxjwjpvr.supabase.co"
+anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lb21weHJma29memJ4andqcHZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0Njk4MzQsImV4cCI6MjA2MTA0NTgzNH0.GLRSPS_TZ66-W2mSLrnYZzf_belmq32CW157pvJXwLA"
+save_dir = "tmp"
+
+supabase = create_client(url, anon_key)
 
 
-def get_csv(supabase_url):
-    filename = os.path.basename(supabase_url)
-    save_path = os.path.join("tmp", filename)
+def get_csv(filename, supabase_client=supabase):
+    bucket = "pose-points"
+    save_path = f"{save_dir}/{filename}.csv"
 
-    os.makedirs("tmp", exist_ok=True)
+    data_response = supabase_client.storage.from_(bucket).download(f"{filename}.csv")
+    if data_response is None:
+        print(f"Nie udało się pobrać pliku {filename}.csv z bucketu {bucket}")
+        return None
 
     try:
-        response = requests.get(supabase_url)
-        response.raise_for_status()
-
         with open(save_path, "wb") as f:
-            f.write(response.content)
-
-    except requests.exceptions.RequestException as e:
-        print(f"Download error: {e}")
+            f.write(data_response)
+        print(f"Pobrano i zapisano plik: {save_path}")
     except IOError as e:
-        print(f"saving error: {e}")
+        print(f"Błąd zapisu pliku: {e}")
+        return None
 
     return save_path
 
