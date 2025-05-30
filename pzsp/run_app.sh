@@ -3,8 +3,14 @@
 cd backend
 pip install -r requirements.txt
 
+pip install -r requirements.txt || {
+  echo "pip install failed!"
+  exit 1
+}
+
 python3 run.py &
 BACKEND_PID=$!
+sleep 2
 
 
 cd ../build/web 
