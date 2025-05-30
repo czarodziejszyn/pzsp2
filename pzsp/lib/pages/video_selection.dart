@@ -6,7 +6,7 @@ class VideoSelectionPage extends StatefulWidget {
   final String danceDescription;
   final String selectedVideo;
   final double length;
-  final String selectedCsv;
+  final String title;
   
   const VideoSelectionPage({
     super.key,
@@ -14,7 +14,7 @@ class VideoSelectionPage extends StatefulWidget {
     required this.danceDescription,
     required this.selectedVideo,
     required this.length,
-    required this.selectedCsv,
+    required this.title,
   });
 
   @override
@@ -41,7 +41,7 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
           videoUrl: widget.selectedVideo,
           startTime: _currentRangeValues.start,
           endTime: _currentRangeValues.end,
-          csvPath: widget.selectedCsv,
+          title: widget.title,
         ),
       ),
     );
