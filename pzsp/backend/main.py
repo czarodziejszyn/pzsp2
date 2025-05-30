@@ -45,7 +45,7 @@ async def status(sid, data):
         data = json.loads(data)
         status = data.get('status')
         if status == 'start':
-            sessions[sid]["id"] = int(data['id'])
+            sessions[sid]["csvPath"] = int(data['csvPath'])
             sessions[sid]["start_sec"] = int(data['time'])
             sessions[sid]["results"] = []
             print(f"[START] Film ID: {sessions[sid]['id']}, Start at: {sessions[sid]['start_sec']}s")
