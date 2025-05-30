@@ -71,6 +71,7 @@ def process_image(film_id, start_sec, image_data, offset_ms):
     frame_number = int((start_sec + offset_ms / 1000.0) * data["fps"])
 
     if frame_number >= len(data["motion"]):
+        print("cos z len")
         return 0.0
 
     video_pose = data["motion"][frame_number]
@@ -78,15 +79,15 @@ def process_image(film_id, start_sec, image_data, offset_ms):
                               for i in range(len(SELECTED_INDICES))])
 
     print(type(image_data))
-    image_data = np.array(image_data)
-    image_rgb = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    results = pose.process(image_rgb)
+    results = pose.process(image_data)
+    print(results)
 
     if not results.pose_landmarks:
+        print("cos z landmarks")
         return 0.0
 
     camera_pose = results.pose_landmarks.landmark
     camera_selected = np.array(
         [[camera_pose[i].x, camera_pose[i].y] for i in SELECTED_INDICES])
 
-    return pose_angle_score(camera_selected, video_selected)
+    return int(100*pose_angle_score(camera_selected, video_selected))
