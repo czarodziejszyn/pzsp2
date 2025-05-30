@@ -1,0 +1,17 @@
+install pyenv (pacman -S pyenv)
+
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(pyenv init - bash)"' >> ~/.bashrc
+
+pyenv install 3.10.10
+
+pyenv local 3.10.10
+
+python3.10 -m venv venv
+
+source venv/bin/activate
+
+pip install opencv-python 
+
+python3.10 camera_view.py
