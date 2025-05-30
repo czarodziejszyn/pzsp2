@@ -2,23 +2,22 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:fl_chart/fl_chart.dart';
+import 'package:pzsp/models/dance_video_selection.dart';
 import 'package:pzsp/pages/camera_screen.dart';
-import 'home_page.dart';
+import 'package:pzsp/pages/home_page.dart';
 
 class FinishedScreen extends StatefulWidget {
-  final String selectedVideo;
+  final DanceVideoSelection selection;
   final double startTime;
   final double endTime;
   final IO.Socket channel;
-  final String title;
 
   const FinishedScreen({
     super.key,
-    required this.selectedVideo,
+    required this.selection,
     required this.startTime,
     required this.endTime,
     required this.channel,
-    required this.title,
   });
 
   @override
@@ -34,31 +33,29 @@ class _FinishedScreenState extends State<FinishedScreen> {
     fetchStatistics();
   }
 
-Future<void> fetchStatistics() async {
-  widget.channel.emit('status', jsonEncode({'status': 'done'}));
+  Future<void> fetchStatistics() async {
+    widget.channel.emit('status', jsonEncode({'status': 'done'}));
 
-  widget.channel.on('result', (data) {
-    List<int> results = List<int>.from(data);
+    widget.channel.on('result', (data) {
+      List<int> results = List<int>.from(data);
 
-    setState(() {
-      keypointStats = results;
+      setState(() {
+        keypointStats = results;
+      });
+
+      widget.channel.off('result');
+      widget.channel.dispose();
     });
-
-    widget.channel.off('result');
-    widget.channel.dispose();
-  });
-}
-
+  }
 
   void restartDance() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => CameraScreen(
-          videoUrl: widget.selectedVideo,
+          selection: widget.selection,
           startTime: widget.startTime,
           endTime: widget.endTime,
-          title: widget.title,
         ),
       ),
     );
@@ -116,9 +113,9 @@ Future<void> fetchStatistics() async {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  Colors.green.withValues(alpha: 0.6),
-                  Colors.yellow.withValues(alpha: 0.6),
-                  Colors.red.withValues(alpha: 0.6),
+                  Colors.green.withOpacity(0.6),
+                  Colors.yellow.withOpacity(0.6),
+                  Colors.red.withOpacity(0.6),
                 ],
                 stops: [0.0, 0.5, 1.0],
                 begin: Alignment.topCenter,
@@ -140,8 +137,9 @@ Future<void> fetchStatistics() async {
         child: Column(
           children: [
             Text(
-              'Dance Stats',
+              'Dance Stats for "${widget.selection.title}"',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Expanded(child: Center(child: buildChart())),

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'video_selection.dart';
+import 'package:pzsp/controllers/dance_controller.dart';
+import 'package:pzsp/models/dance.dart';
+import 'package:pzsp/models/dance_video_selection.dart';
+import 'package:pzsp/pages/video_selection_page.dart';
 import 'package:pzsp/constants.dart';
-
-
-// https://meompxrfkofzbxjwjpvr.supabase.co/storage/v1/object/sign/thumbnails/168.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2E1NTNkOGVjLTgyYzUtNGM2Mi05NTg1LThhZTU1ZDRjYjJlOSJ9.eyJ1cmwiOiJ0aHVtYm5haWxzLzE2OC5qcGciLCJpYXQiOjE3NDc2NjM3ODEsImV4cCI6MTc3OTE5OTc4MX0.MtdPx_0e_i3doZ63fR70-f4qZ7uLsS130-FmYKBMfzU
-// https://meompxrfkofzbxjwjpvr.supabase.co/storage/v1/object/sign/thumbnails/321image.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2E1NTNkOGVjLTgyYzUtNGM2Mi05NTg1LThhZTU1ZDRjYjJlOSJ9.eyJ1cmwiOiJ0aHVtYm5haWxzLzMyMWltYWdlLmpwZyIsImlhdCI6MTc0NzY2MzgwMiwiZXhwIjoxNzc5MTk5ODAyfQ.O39_OT86H5Mg1uZs475Z6xo2dgQglgYLZyYaU_aqcgQ
-// https://meompxrfkofzbxjwjpvr.supabase.co/storage/v1/object/sign/videos/123name.mp4?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2E1NTNkOGVjLTgyYzUtNGM2Mi05NTg1LThhZTU1ZDRjYjJlOSJ9.eyJ1cmwiOiJ2aWRlb3MvMTIzbmFtZS5tcDQiLCJpYXQiOjE3NDc2NjM4MjcsImV4cCI6MTc3OTE5OTgyN30.vOscNiQgYQrtx3PqYxPs3_EeUKAP8FQTvcI7wqt3vEs
-//
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,50 +14,38 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final CarouselSliderController _controller = CarouselSliderController();
+  final DanceController _controller = DanceController();
   int _currentIndex = 0;
-
-  List<Map<String, dynamic>> _items = [];
-
-
-
-
-  // final List<Map<String, dynamic>> _items = [
-  //   {'image': 'https://meompxrfkofzbxjwjpvr.supabase.co/storage/v1/object/sign/thumbnails/168.jpg?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InN0b3JhZ2UtdXJsLXNpZ25pbmcta2V5X2E1NTNkOGVjLTgyYzUtNGM2Mi05NTg1LThhZTU1ZDRjYjJlOSJ9.eyJ1cmwiOiJ0aHVtYm5haWxzLzE2OC5qcGciLCJpYXQiOjE3NDc2NjM0ODEsImV4cCI6MTc0ODI2ODI4MX0.5HmU6USM-z7SCdwVL16NAWk6A7ekKN-n_yoCNsMmdOw', 'video': 'https://picsum.photos/seed/746/600', 'length': 120, 'text': 'Dance Style 1'},
-  //   {'image': 'https://picsum.photos/seed/926/600', 'video': 'https://picsum.photos/seed/747/600', 'length': 60,   'text': 'Dance Style 2'},
-  //   {'image': 'https://picsum.photos/seed/165/600', 'video': 'https://picsum.photos/seed/748/600', 'length': 140,   'text': 'Dance Style 3'},
-  //   {'image': 'https://picsum.photos/seed/999/600', 'video': 'https://picsum.photos/seed/749/600', 'length': 40,   'text': 'Dance Style 4'},
-  // ];
+  List<Dance> _dances = [];
 
   @override
   void initState() {
     super.initState();
-    fetchItems(); // już nie przypisujesz do _items
+    _loadDances();
   }
 
-  Future<void> fetchItems() async {
-    final response = await Supabase.instance.client
-        .from('dance_info')
-        .select();
-
-    setState(() {
-      _items = List<Map<String, dynamic>>.from(response);
-    });
+  Future<void> _loadDances() async {
+    final data = await _controller.loadDances();
+    setState(() => _dances = data);
   }
 
-  void _onButtonPressed() {
-    if (_items.isEmpty) return;  // zabezpieczenie na wypadek braku danych
+  void _onSelectDance() {
+    if (_dances.isEmpty) return;
+    final selected = _dances[_currentIndex];
+
+    final selection = DanceVideoSelection(
+      imageUrl:
+          '$supabaseUrl$supabaseBuckerDir/thumbnails/${selected.title}.jpg',
+      videoUrl: '$supabaseUrl$supabaseBuckerDir/videos/${selected.title}.mp4',
+      title: selected.title,
+      description: selected.description,
+      length: selected.length,
+    );
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => VideoSelectionPage(
-          selectedImage: '$supabaseUrl$supabaseBuckerDir/thumbnails/${_items[_currentIndex]['title']}.jpg',
-          selectedVideo: '$supabaseUrl$supabaseBuckerDir/videos/${_items[_currentIndex]['title']}.mp4',
-          title: _items[_currentIndex]['title'],
-          danceDescription: _items[_currentIndex]['description'],
-          length: _items[_currentIndex]['length'],
-        ),
+        builder: (_) => VideoSelectionPage(selection: selection),
       ),
     );
   }
@@ -73,36 +57,46 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            children: [
-              const Spacer(),
-              _items.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : CarouselSlider(
-                      items: _items.map((item) {
-
-                        return Builder(
-                          builder: (BuildContext context) {
-                            return Column(
+          child: _dances.isEmpty
+              ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+              : Column(
+                  children: [
+                    const Spacer(),
+                    CarouselSlider(
+                      items: _dances.map(
+                        (dance) {
+                          return Builder(
+                            builder: (context) => Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox(
+                                    height: 300,
                                     child: Image.network(
-                                      '$supabaseUrl$supabaseBuckerDir/thumbnails/${item['title']}.jpg',
+                                      '$supabaseUrl$supabaseBuckerDir/thumbnails/${dance.title}.jpg',
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
                                         return const Center(
                                           child: Icon(Icons.error, size: 50),
                                         );
                                       },
-                                      loadingBuilder: (context, child, loadingProgress) {
-                                        if (loadingProgress == null) return child;
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
                                         return Center(
                                           child: CircularProgressIndicator(
-                                            value: loadingProgress.expectedTotalBytes != null
-                                                ? loadingProgress.cumulativeBytesLoaded /
-                                                    loadingProgress.expectedTotalBytes!
+                                            value: loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                        .cumulativeBytesLoaded /
+                                                    loadingProgress
+                                                        .expectedTotalBytes!
                                                 : null,
                                           ),
                                         );
@@ -112,41 +106,53 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  item['description'] ?? '',  // użyj opisu jako tekstu
-                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                  dance.title,
+                                  style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  dance.description,
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
-                            );
-                          },
-                        );
-                      }).toList(),
-                      carouselController: _controller,
-                      options: CarouselOptions(
-                        height: 400,
-                        initialPage: _currentIndex,
-                        viewportFraction: 0.5,
-                        pageSnapping: true,
-                        enlargeCenterPage: true,
-                        enableInfiniteScroll: true,
-                        onPageChanged: (index, reason) {
-                          setState(() {
-                            _currentIndex = index;
-                          });
+                            ),
+                          );
                         },
+                      ).toList(),
+                      options: CarouselOptions(
+                        height: 450,
+                        enlargeCenterPage: true,
+                        viewportFraction: 0.5,
+                        onPageChanged: (i, _) =>
+                            setState(() => _currentIndex = i),
                       ),
                     ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _onButtonPressed,
-                icon: const Icon(Icons.check_circle_outline_rounded, size: 30),
-                label: const Text('Select Dance', style: TextStyle(fontSize: 24)),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: _onSelectDance,
+                      icon: const Icon(Icons.check_circle_outline_rounded,
+                          size: 30),
+                      label: const Text(
+                        'Select Dance',
+                        style: TextStyle(fontSize: 24),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+                    const Spacer(
+                      flex: 2,
+                    ),
+                  ],
                 ),
-              ),
-              const Spacer(flex: 2),
-            ],
-          ),
         ),
       ),
     );
