@@ -54,7 +54,7 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
             widget.controller.seekTo(startDuration).then((_) {
               Future.delayed(const Duration(milliseconds: 100), () {
                 widget.controller.play();
-                widget.onCountdownFinished(); // zacznij wysyłać ramki
+                widget.onCountdownFinished();
               });
             });
           }

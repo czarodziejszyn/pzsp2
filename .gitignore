@@ -8,3 +8,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# tmp file needed, but not content
+pzsp/backend/python/tmp/*
+!pzsp/backend/python/tmp/.gitkeep
+!pzsp/backend/python/tmp/blank*

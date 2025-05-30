@@ -1,30 +1,32 @@
-import cv2
 import mediapipe as mp
 import numpy as np
 import csv
 from .algorithm import pose_angle_score
+from supabase import create_client
 
-import requests
-import os
+url = "https://meompxrfkofzbxjwjpvr.supabase.co"
+anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lb21weHJma29memJ4andqcHZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0Njk4MzQsImV4cCI6MjA2MTA0NTgzNH0.GLRSPS_TZ66-W2mSLrnYZzf_belmq32CW157pvJXwLA"
+save_dir = "tmp"
+
+supabase = create_client(url, anon_key)
 
 
-def get_csv(supabase_url):
-    filename = os.path.basename(supabase_url)
-    save_path = os.path.join("tmp", filename)
+def get_csv(filename, supabase_client=supabase):
+    bucket = "pose-points"
+    save_path = f"{save_dir}/{filename}.csv"
 
-    os.makedirs("tmp", exist_ok=True)
+    data_response = supabase_client.storage.from_(bucket).download(f"{filename}.csv")
+    if data_response is None:
+        print(f"Nie udało się pobrać pliku {filename}.csv z bucketu {bucket}")
+        return None
 
     try:
-        response = requests.get(supabase_url)
-        response.raise_for_status()
-
         with open(save_path, "wb") as f:
-            f.write(response.content)
-
-    except requests.exceptions.RequestException as e:
-        print(f"Download error: {e}")
+            f.write(data_response)
+        print(f"Pobrano i zapisano plik: {save_path}")
     except IOError as e:
-        print(f"saving error: {e}")
+        print(f"Błąd zapisu pliku: {e}")
+        return None
 
     return save_path
 
@@ -71,6 +73,7 @@ def process_image(film_id, start_sec, image_data, offset_ms):
     frame_number = int((start_sec + offset_ms / 1000.0) * data["fps"])
 
     if frame_number >= len(data["motion"]):
+        print("cos z len")
         return 0.0
 
     video_pose = data["motion"][frame_number]
@@ -78,15 +81,15 @@ def process_image(film_id, start_sec, image_data, offset_ms):
                               for i in range(len(SELECTED_INDICES))])
 
     print(type(image_data))
-    image_data = np.array(image_data)
-    image_rgb = cv2.cvtColor(image_data, cv2.COLOR_BGR2RGB)
-    results = pose.process(image_rgb)
+    results = pose.process(image_data)
+    print(results)
 
     if not results.pose_landmarks:
+        print("cos z landmarks")
         return 0.0
 
     camera_pose = results.pose_landmarks.landmark
     camera_selected = np.array(
         [[camera_pose[i].x, camera_pose[i].y] for i in SELECTED_INDICES])
 
-    return pose_angle_score(camera_selected, video_selected)
+    return int(100*pose_angle_score(camera_selected, video_selected))
