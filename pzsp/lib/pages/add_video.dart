@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:pzsp/controllers/dance_controller.dart';
 
 class AddVideoDialog extends StatefulWidget {
   const AddVideoDialog({super.key});
@@ -12,21 +12,21 @@ class AddVideoDialog extends StatefulWidget {
 class _AddVideoDialogState extends State<AddVideoDialog> {
   PlatformFile? _thumbnailFile;
   PlatformFile? _videoFile;
+  final _titleController = TextEditingController();
   final _lengthController = TextEditingController();
   final _descriptionController = TextEditingController();
-
   bool _isLoading = false;
-  final supabase = Supabase.instance.client;
+
+  final DanceController _danceController =
+      DanceController(); // <-- nowy kontroler
 
   Future<void> _pickThumbnail() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png'],
+      allowedExtensions: ['jpg', 'jpeg'],
     );
     if (result != null) {
-      setState(() {
-        _thumbnailFile = result.files.first;
-      });
+      setState(() => _thumbnailFile = result.files.first);
     }
   }
 
@@ -36,88 +36,51 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
       allowedExtensions: ['mp4'],
     );
     if (result != null) {
-      setState(() {
-        _videoFile = result.files.first;
-      });
+      setState(() => _videoFile = result.files.first);
     }
   }
 
   Future<void> _uploadAndSave() async {
+    final title = _titleController.text.trim();
+    final description = _descriptionController.text.trim();
+    final length = double.tryParse(_lengthController.text);
+
     if (_thumbnailFile == null ||
         _videoFile == null ||
-        _lengthController.text.isEmpty ||
-        _descriptionController.text.isEmpty) {
+        title.isEmpty ||
+        description.isEmpty ||
+        length == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fill in all the fields')));
+        const SnackBar(content: Text('Fill in all the fields correctly')),
+      );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // 1. Upload thumbnail
-      final thumbPath =
-          '${DateTime.now().millisecondsSinceEpoch}_${_thumbnailFile!.name}';
-      final thumbUploadResponse =
-          await supabase.storage.from('thumbnails').uploadBinary(
-                thumbPath,
-                _thumbnailFile!.bytes!,
-                fileOptions: FileOptions(cacheControl: '3600', upsert: false),
-              );
+      await _danceController.addDance(
+        title: title,
+        description: description,
+        length: length,
+        thumbnailBytes: _thumbnailFile!.bytes!,
+        videoBytes: _videoFile!.bytes!,
+      );
 
-      // 2. Upload video
-      final videoPath =
-          '${DateTime.now().millisecondsSinceEpoch}_${_videoFile!.name}';
-      final videoUploadResponse =
-          await supabase.storage.from('videos').uploadBinary(
-                videoPath,
-                _videoFile!.bytes!,
-                fileOptions: FileOptions(cacheControl: '3600', upsert: false),
-              );
-
-      // 3. Get public URLs (bez `.data`)
-      final thumbUrl =
-          supabase.storage.from('thumbnails').getPublicUrl(thumbPath);
-      final videoUrl = supabase.storage.from('videos').getPublicUrl(videoPath);
-
-      // 4. Insert to DB
-      final length = double.tryParse(_lengthController.text);
-      if (length == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Incorrect video length')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // 5. Insert record
-      await supabase.from('videos').insert({
-        'thumbnail': thumbUrl,
-        'video': videoUrl,
-        'length': length,
-        'description': _descriptionController.text.trim(),
-      });
-
-      // Jeśli doszliśmy tutaj — sukces
       Navigator.of(context).pop(true);
     } catch (e) {
-      print('Error adding video: $e');
+      print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding video. Try again.')),
+        const SnackBar(content: Text('Error uploading files. Try again.')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   void dispose() {
+    _titleController.dispose();
     _lengthController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -129,23 +92,30 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
       title: const Text('Add new video'),
       content: SizedBox(
         width: 400,
-        height: 200,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 400,
+                width: double.infinity,
+                child: TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _pickThumbnail,
                   child: Text(_thumbnailFile == null
-                      ? 'Select Thumbnail (jpg/png)'
+                      ? 'Select Thumbnail (jpg)'
                       : 'Selected: ${_thumbnailFile!.name}'),
                 ),
               ),
               const SizedBox(height: 10),
               SizedBox(
-                width: 400,
+                width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _pickVideo,
                   child: Text(_videoFile == null
@@ -155,17 +125,17 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
               ),
               const SizedBox(height: 10),
               SizedBox(
-                width: 400,
+                width: double.infinity,
                 child: TextField(
                   controller: _lengthController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                      labelText: 'Video length (seconds)'),
+                  decoration:
+                      const InputDecoration(labelText: 'Length (seconds)'),
                 ),
               ),
               const SizedBox(height: 10),
               SizedBox(
-                width: 400,
+                width: double.infinity,
                 child: TextField(
                   controller: _descriptionController,
                   decoration: const InputDecoration(labelText: 'Description'),
@@ -177,14 +147,19 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
         ElevatedButton(
           onPressed: _isLoading ? null : _uploadAndSave,
           child: _isLoading
-              ? const CircularProgressIndicator()
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Add Video'),
-        )
+        ),
       ],
     );
   }

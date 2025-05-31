@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pzsp/service/auth_service.dart'; // popraw ścieżkę do swojego folderu service
+import 'package:pzsp/service/auth_service.dart';
 
 class AuthController extends ChangeNotifier {
   final AuthService _authService = AuthService();

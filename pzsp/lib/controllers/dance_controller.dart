@@ -33,4 +33,20 @@ class DanceController {
   Future<void> deleteDance(Dance dance) async {
     await _service.deleteDance(dance);
   }
+
+  Future<void> addDance({
+    required String title,
+    required String description,
+    required double length,
+    required Uint8List thumbnailBytes,
+    required Uint8List videoBytes,
+  }) async {
+    await _service.uploadDance(
+      title: title,
+      description: description,
+      length: length,
+      thumbnailBytes: thumbnailBytes,
+      videoBytes: videoBytes,
+    );
+  }
 }

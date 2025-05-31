@@ -62,4 +62,37 @@ class SupabaseService {
 
     return updatedDance;
   }
+
+  Future<void> uploadDance({
+    required String title,
+    required String description,
+    required double length,
+    required Uint8List thumbnailBytes,
+    required Uint8List videoBytes,
+  }) async {
+    final thumbnailPath = '$title.jpg';
+    final videoPath = '$title.mp4';
+
+    // 1. Upload thumbnail
+    await client.storage.from('thumbnails').uploadBinary(
+          thumbnailPath,
+          thumbnailBytes,
+          fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+        );
+
+    // 2. Upload video
+    await client.storage.from('videos').uploadBinary(
+          videoPath,
+          videoBytes,
+          fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+        );
+
+    // 3. Insert to database
+    await client.from('dance_info').insert({
+      'title': title,
+      'description': description,
+      'length': length,
+      // thumbnail i video NIE są trzymane w bazie
+    });
+  }
 }
