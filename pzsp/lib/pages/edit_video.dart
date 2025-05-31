@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pzsp/models/dance.dart';
 import 'package:pzsp/service/supabase_service.dart';
+import 'package:pzsp/constants.dart';
 
 class EditVideoDialog extends StatefulWidget {
   final Dance video;
@@ -71,21 +72,39 @@ class _EditVideoDialogState extends State<EditVideoDialog> {
             extractStoragePathFromUrl(widget.video.thumbnail, 'thumbnails');
         await supabase.storage.from('thumbnails').remove([oldThumbPath]);
 
-        final newThumbPath =
-            '${DateTime.now().millisecondsSinceEpoch}_${_newThumbnailFile!.name}';
-        await supabase.storage.from('thumbnails').uploadBinary(
-              newThumbPath,
-              _newThumbnailFile!.bytes!,
-              fileOptions:
-                  const FileOptions(cacheControl: '3600', upsert: false),
-            );
+        final newThumbPath = '${widget.video.title}.jpg';
+
+        try {
+          await supabase.storage.from('thumbnails').uploadBinary(
+                newThumbPath,
+                _newThumbnailFile!.bytes!,
+                fileOptions: const FileOptions(
+                  cacheControl: '3600',
+                  upsert: true,
+                ),
+              );
+        } on StorageException catch (e, st) {
+          print('Supabase storage error: ${e.message}');
+          print('Stacktrace: $st');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Storage error: ${e.message}')),
+          );
+        } catch (e, st) {
+          print('Unexpected error: $e');
+          print('Stacktrace: $st');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Unexpected error: $e')),
+          );
+        }
+
+        // Wygeneruj publiczny URL
         newThumbUrl =
-            supabase.storage.from('thumbnails').getPublicUrl(newThumbPath);
+            '${supabaseUrl}${supabaseBuckerDir}/thumbnails/$newThumbPath';
       }
 
       final updatedDance = widget.video.copyWith(
         description: description,
-        thumbnail: newThumbUrl,
+        thumbnail: newThumbUrl, // albo null => wtedy zostanie stary
       );
 
       await _service.updateDance(updatedDance);
