@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:pzsp/models/dance.dart';
+import 'package:pzsp/service/supabase_service.dart';
 
 class EditVideoDialog extends StatefulWidget {
-  final Map<String, dynamic> video;
+  final Dance video;
 
   const EditVideoDialog({super.key, required this.video});
 
@@ -17,12 +19,13 @@ class _EditVideoDialogState extends State<EditVideoDialog> {
   bool _isLoading = false;
 
   final supabase = Supabase.instance.client;
+  final SupabaseService _service = SupabaseService();
 
   @override
   void initState() {
     super.initState();
     _descriptionController =
-        TextEditingController(text: widget.video['description']);
+        TextEditingController(text: widget.video.description);
   }
 
   Future<void> _pickNewThumbnail() async {
@@ -63,41 +66,29 @@ class _EditVideoDialogState extends State<EditVideoDialog> {
     try {
       String? newThumbUrl;
 
-      // Jeśli thumbnail do zmiany
       if (_newThumbnailFile != null) {
-        // Usuń stary thumbnail ze storage
-        final oldThumbPath = extractStoragePathFromUrl(
-          widget.video['thumbnail'],
-          'thumbnails',
-        );
+        final oldThumbPath =
+            extractStoragePathFromUrl(widget.video.thumbnail, 'thumbnails');
         await supabase.storage.from('thumbnails').remove([oldThumbPath]);
 
-        // Wgraj nowy
         final newThumbPath =
             '${DateTime.now().millisecondsSinceEpoch}_${_newThumbnailFile!.name}';
         await supabase.storage.from('thumbnails').uploadBinary(
               newThumbPath,
               _newThumbnailFile!.bytes!,
-              fileOptions: FileOptions(cacheControl: '3600', upsert: false),
+              fileOptions:
+                  const FileOptions(cacheControl: '3600', upsert: false),
             );
-
         newThumbUrl =
             supabase.storage.from('thumbnails').getPublicUrl(newThumbPath);
       }
 
-      // Zbuduj dane do aktualizacji
-      final updateData = {
-        'description': description,
-      };
+      final updatedDance = widget.video.copyWith(
+        description: description,
+        thumbnail: newThumbUrl,
+      );
 
-      if (newThumbUrl != null) {
-        updateData['thumbnail'] = newThumbUrl;
-      }
-
-      await supabase
-          .from('videos')
-          .update(updateData)
-          .eq('id', widget.video['id']);
+      await _service.updateDance(updatedDance);
 
       Navigator.of(context).pop(true);
     } catch (e) {
@@ -126,14 +117,11 @@ class _EditVideoDialogState extends State<EditVideoDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _pickNewThumbnail,
-                child: Text(_newThumbnailFile == null
-                    ? 'Select new thumbnail'
-                    : 'Selected: ${_newThumbnailFile!.name}'),
-              ),
+            ElevatedButton(
+              onPressed: _pickNewThumbnail,
+              child: Text(_newThumbnailFile == null
+                  ? 'Select new thumbnail'
+                  : 'Selected: ${_newThumbnailFile!.name}'),
             ),
             const SizedBox(height: 12),
             TextField(

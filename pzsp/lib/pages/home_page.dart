@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pzsp/controllers/auth_controller.dart';
+import 'package:pzsp/controllers/dance_controller.dart';
+import 'package:pzsp/models/dance.dart';
+import 'package:pzsp/pages/add_video.dart';
+import 'package:pzsp/pages/edit_video.dart';
+import 'package:pzsp/service/supabase_service.dart';
 import 'login_page.dart';
-import 'add_video.dart';
-import 'edit_video.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,8 +16,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, dynamic>> _items = [];
-  final supabase = Supabase.instance.client;
+  final DanceController _danceController = DanceController();
+  final SupabaseService _supabaseService = SupabaseService();
+
+  List<Dance> _items = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -24,38 +29,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchItems() async {
-    final response = await supabase.from('videos').select();
+    setState(() => _isLoading = true);
+    final dances = await _danceController.loadDances();
     setState(() {
-      _items = List<Map<String, dynamic>>.from(response);
+      _items = dances;
+      _isLoading = false;
     });
   }
 
-  String extractStoragePathFromUrl(String url, String bucketName) {
-    final uri = Uri.parse(url);
-    final segments = uri.pathSegments;
-    final bucketIndex = segments.indexOf(bucketName);
-    if (bucketIndex == -1 || bucketIndex + 1 >= segments.length) {
-      throw Exception('Invalid URL structure or bucket not found in URL');
-    }
-    final keySegments = segments.sublist(bucketIndex + 1);
-    return keySegments.join('/');
-  }
-
-  Future<void> deleteVideoItem(Map<String, dynamic> video) async {
+  Future<void> deleteVideoItem(Dance dance) async {
     try {
-      final thumbPath =
-          extractStoragePathFromUrl(video['thumbnail'], 'thumbnails');
-      final videoPath = extractStoragePathFromUrl(video['video'], 'videos');
-
-      await supabase.storage.from('thumbnails').remove([thumbPath]);
-      await supabase.storage.from('videos').remove([videoPath]);
-      await supabase.from('videos').delete().eq('id', video['id']);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Video deleted')),
-      );
-
+      await _supabaseService.deleteDance(dance);
       await fetchItems();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Video deleted successfully')),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error deleting video: $e')),
@@ -113,78 +101,85 @@ class _HomePageState extends State<HomePage> {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 80),
-            child: _items.isEmpty
+            child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _items.length,
-                    itemBuilder: (context, index) {
-                      final item = _items[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          leading: Image.network(
-                            item['thumbnail'],
-                            width: 80,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const Icon(Icons.error),
-                          ),
-                          title: Text(item['description'] ?? ''),
-                          subtitle: Text('Length: ${item['length']}s'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit,
-                                    color: Colors.deepPurple),
-                                onPressed: () async {
-                                  final result = await showDialog<bool>(
-                                    context: context,
-                                    builder: (_) =>
-                                        EditVideoDialog(video: item),
-                                  );
-                                  if (result == true) {
-                                    await fetchItems();
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: Colors.grey),
-                                onPressed: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Delete video'),
-                                      content: const Text(
-                                          'Are you sure you want to delete this video?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(false),
-                                          child: const Text('Cancel'),
+                : _items.isEmpty
+                    ? const Center(child: Text('No videos available'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items.length,
+                        itemBuilder: (context, index) {
+                          final item = _items[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              leading: item.thumbnail.isNotEmpty
+                                  ? Image.network(
+                                      item.thumbnail,
+                                      width: 80,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.error),
+                                    )
+                                  : const Icon(Icons.image_not_supported,
+                                      size: 80),
+                              title: Text(item.title),
+                              subtitle: Text(item.description),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.deepPurple),
+                                    onPressed: () async {
+                                      final result = await showDialog<bool>(
+                                        context: context,
+                                        builder: (_) =>
+                                            EditVideoDialog(video: item),
+                                      );
+                                      if (result == true) {
+                                        await fetchItems();
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.grey),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Delete video'),
+                                          content: const Text(
+                                              'Are you sure you want to delete this video?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(true),
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
                                         ),
-                                        ElevatedButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(true),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
+                                      );
 
-                                  if (confirm == true) {
-                                    await deleteVideoItem(item);
-                                  }
-                                },
+                                      if (confirm == true) {
+                                        await deleteVideoItem(item);
+                                      }
+                                    },
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                            ),
+                          );
+                        },
+                      ),
           ),
           Positioned(
             bottom: 16,
