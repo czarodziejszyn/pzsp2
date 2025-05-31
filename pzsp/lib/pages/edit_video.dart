@@ -74,40 +74,29 @@ class _EditVideoDialogState extends State<EditVideoDialog> {
 
         final newThumbPath = '${widget.video.title}.jpg';
 
-        try {
-          await supabase.storage.from('thumbnails').uploadBinary(
-                newThumbPath,
-                _newThumbnailFile!.bytes!,
-                fileOptions: const FileOptions(
-                  cacheControl: '3600',
-                  upsert: true,
-                ),
-              );
-        } on StorageException catch (e, st) {
-          print('Supabase storage error: ${e.message}');
-          print('Stacktrace: $st');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Storage error: ${e.message}')),
-          );
-        } catch (e, st) {
-          print('Unexpected error: $e');
-          print('Stacktrace: $st');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Unexpected error: $e')),
-          );
-        }
+        await supabase.storage.from('thumbnails').uploadBinary(
+              newThumbPath,
+              _newThumbnailFile!.bytes!,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: true,
+              ),
+            );
 
-        // Wygeneruj publiczny URL
         newThumbUrl =
             '${supabaseUrl}${supabaseBuckerDir}/thumbnails/$newThumbPath';
       }
 
       final updatedDance = widget.video.copyWith(
         description: description,
-        thumbnail: newThumbUrl, // albo null => wtedy zostanie stary
+        thumbnail: newThumbUrl ?? widget.video.thumbnail,
       );
 
-      await _service.updateDance(updatedDance);
+      if (newThumbUrl != null) {
+        await _service.updateDance(updatedDance, updateThumbnail: true);
+      } else {
+        await _service.updateDance(updatedDance, updateThumbnail: false);
+      }
 
       Navigator.of(context).pop(true);
     } catch (e) {
