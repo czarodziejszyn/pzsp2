@@ -23,10 +23,15 @@ class SupabaseService {
   }
 
   Future<void> deleteDance(Dance dance) async {
-    // remove files based on generated URLs
-    await client.storage.from('thumbnails').remove(['${dance.title}.jpg']);
-    await client.storage.from('videos').remove(['${dance.title}.mp4']);
-    await client.from('dance_info').delete().eq('id', dance.id);
+    try {
+      await client.storage.from('thumbnails').remove(['${dance.title}.jpg']);
+      await client.storage.from('videos').remove(['${dance.title}.mp4']);
+      await client.storage.from('pose-points').remove(['${dance.title}.csv']);
+
+      await client.from('dance_info').delete().eq('id', dance.id);
+    } catch (e) {
+      throw Exception('Błąd przy usuwaniu plików lub rekordu: $e');
+    }
   }
 
   /// Upload new thumbnail and update dance info

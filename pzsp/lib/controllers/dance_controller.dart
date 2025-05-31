@@ -29,4 +29,8 @@ class DanceController {
 
     return updatedDance;
   }
+
+  Future<void> deleteDance(Dance dance) async {
+    await _service.deleteDance(dance);
+  }
 }

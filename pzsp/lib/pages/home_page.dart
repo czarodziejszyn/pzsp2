@@ -5,7 +5,7 @@ import 'package:pzsp/controllers/dance_controller.dart';
 import 'package:pzsp/models/dance.dart';
 import 'package:pzsp/pages/add_video.dart';
 import 'package:pzsp/pages/edit_video.dart';
-import 'package:pzsp/service/supabase_service.dart';
+
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,7 +17,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final DanceController _danceController = DanceController();
-  final SupabaseService _supabaseService = SupabaseService();
 
   List<Dance> _items = [];
   bool _isLoading = true;
@@ -39,14 +38,17 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> deleteVideoItem(Dance dance) async {
     try {
-      await _supabaseService.deleteDance(dance);
+      await _danceController.deleteDance(dance);
       await fetchItems();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Video deleted successfully')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting video: $e')),
+        SnackBar(
+          content: Text('Błąd przy usuwaniu video: ${e.toString()}'),
+          backgroundColor: Colors.grey,
+        ),
       );
     }
   }
