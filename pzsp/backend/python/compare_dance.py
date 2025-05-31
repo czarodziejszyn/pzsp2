@@ -31,6 +31,37 @@ def get_csv(filename, supabase_client=supabase):
     return save_path
 
 
+def get_mp4(filename, supabase_client=supabase):
+    bucket = "videos"
+    save_path = f"{save_dir}/{filename}.mp4"
+
+    data_response = supabase_client.storage.from_(bucket).download(f"{filename}.mp4")
+    if data_response is None:
+        print(f"Nie udało się pobrać pliku {filename}.mp4 z bucketu {bucket}")
+        return None
+
+    try:
+        with open(save_path, "wb") as f:
+            f.write(data_response)
+        print(f"Pobrano i zapisano plik: {save_path}")
+    except IOError as e:
+        print(f"Błąd zapisu pliku: {e}")
+        return None
+
+    return save_path
+
+
+def upload_csv(filename, supabase_client=supabase):
+    file_path = f"{save_dir}/{filename}.csv"
+    file_data = open(file_path, "rb")
+    result = supabase_client.storage.from_("pose-points").upload(
+        f"{filename}.csv", 
+        file_data,
+        {"content-type": "text/csv"}
+    )
+    return (result)
+
+
 SELECTED_INDICES = [7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 POSE_POINTS = 33
 POSE_DIM = 2  # x, y
