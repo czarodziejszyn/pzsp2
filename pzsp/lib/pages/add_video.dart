@@ -1,8 +1,10 @@
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pzsp/controllers/dance_controller.dart';
 import 'package:video_player/video_player.dart';
+
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class AddVideoDialog extends StatefulWidget {
   const AddVideoDialog({super.key});
@@ -12,6 +14,8 @@ class AddVideoDialog extends StatefulWidget {
 }
 
 class _AddVideoDialogState extends State<AddVideoDialog> {
+  late IO.Socket channel;
+
   PlatformFile? _thumbnailFile;
   PlatformFile? _videoFile;
   final _titleController = TextEditingController();
@@ -20,6 +24,35 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
   bool _isLoading = false;
 
   final DanceController _danceController = DanceController();
+
+  @override
+  void initState() {
+    super.initState();
+    _connectSocket();
+  }
+
+  void _connectSocket() {
+    channel = IO.io(
+      'http://localhost:8000',
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .build(),
+    );
+    channel.connect();
+
+    channel.onConnect((_) {
+      print('Socket connected');
+    });
+
+    channel.onDisconnect((_) {
+      print('Socket disconnected');
+    });
+
+    channel.onConnectError((data) {
+      print('Socket connection error: $data');
+    });
+  }
 
   Future<void> _pickThumbnail() async {
     final result = await FilePicker.platform.pickFiles(
@@ -35,7 +68,7 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['mp4'],
-      withData: true, // potrzebne na web
+      withData: true,
     );
 
     if (result != null && result.files.single.bytes != null) {
@@ -84,6 +117,17 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
         videoBytes: _videoFile!.bytes!,
       );
 
+      // Emitujemy event z nazwą pliku video do backendu
+      if (channel.connected) {
+        final message = jsonEncode({
+          'filename': _videoFile!.name,
+        });
+        channel.emit('new_video_uploaded', message);
+        print('Emitted new_video_uploaded with filename: ${_videoFile!.name}');
+      } else {
+        print('Socket is not connected');
+      }
+
       Navigator.of(context).pop(true);
     } catch (e) {
       print('Error: $e');
@@ -97,6 +141,7 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
 
   @override
   void dispose() {
+    channel.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
