@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pzsp/controllers/dance_controller.dart';
+import 'package:video_player/video_player.dart';
 
 class AddVideoDialog extends StatefulWidget {
   const AddVideoDialog({super.key});
@@ -13,12 +15,11 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
   PlatformFile? _thumbnailFile;
   PlatformFile? _videoFile;
   final _titleController = TextEditingController();
-  final _lengthController = TextEditingController();
   final _descriptionController = TextEditingController();
+  double? _videoDurationSeconds;
   bool _isLoading = false;
 
-  final DanceController _danceController =
-      DanceController(); // <-- nowy kontroler
+  final DanceController _danceController = DanceController();
 
   Future<void> _pickThumbnail() async {
     final result = await FilePicker.platform.pickFiles(
@@ -34,16 +35,32 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['mp4'],
+      withData: true, // potrzebne na web
     );
-    if (result != null) {
-      setState(() => _videoFile = result.files.first);
+
+    if (result != null && result.files.single.bytes != null) {
+      final bytes = result.files.single.bytes!;
+      final uri = Uri.dataFromBytes(bytes, mimeType: 'video/mp4');
+
+      final controller = VideoPlayerController.networkUrl(uri);
+      await controller.initialize();
+      final duration = controller.value.duration;
+
+      print('Video duration: ${duration.inSeconds} seconds');
+
+      setState(() {
+        _videoFile = result.files.first;
+        _videoDurationSeconds = duration.inSeconds.toDouble();
+      });
+
+      controller.dispose();
     }
   }
 
   Future<void> _uploadAndSave() async {
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
-    final length = double.tryParse(_lengthController.text);
+    final length = _videoDurationSeconds;
 
     if (_thumbnailFile == null ||
         _videoFile == null ||
@@ -81,7 +98,6 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
   @override
   void dispose() {
     _titleController.dispose();
-    _lengthController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -120,17 +136,7 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
                   onPressed: _pickVideo,
                   child: Text(_videoFile == null
                       ? 'Select Video (mp4)'
-                      : 'Selected: ${_videoFile!.name}'),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: TextField(
-                  controller: _lengthController,
-                  keyboardType: TextInputType.number,
-                  decoration:
-                      const InputDecoration(labelText: 'Length (seconds)'),
+                      : 'Selected: ${_videoFile!.name} (${_videoDurationSeconds?.toStringAsFixed(0) ?? "?"}s)'),
                 ),
               ),
               const SizedBox(height: 10),
