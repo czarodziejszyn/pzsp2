@@ -33,6 +33,19 @@ class _FinishedScreenState extends State<FinishedScreen> {
     fetchStatistics();
   }
 
+  double getAverageScore() {
+    if (keypointStats.isEmpty) return 0;
+    return keypointStats.reduce((a, b) => a + b) / keypointStats.length;
+  }
+
+  String getScoreTitle(double avg) {
+    if (avg < 30) return "First Steps";
+    if (avg < 50) return "Dance Floor Rookie";
+    if (avg < 75) return "Dancing Hero";
+    if (avg < 90) return "Master of the Floor";
+    return "Virtuoso of Movement";
+  }
+
   Future<void> fetchStatistics() async {
     widget.channel.emit('status', jsonEncode({'status': 'done'}));
 
@@ -41,6 +54,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
 
       setState(() {
         keypointStats = results;
+        // keypointStats = [80, 82, 54, 32, 56, 80, 90, 72, 86, 82];
       });
 
       widget.channel.off('result');
@@ -69,31 +83,37 @@ class _FinishedScreenState extends State<FinishedScreen> {
     );
   }
 
-  Widget buildChart() {
+  Widget buildChart(double avg) {
     if (keypointStats.isEmpty) {
-      return const CircularProgressIndicator();
+      return const Center(
+        child: SizedBox(
+          width: 60,
+          height: 60,
+          child: CircularProgressIndicator(strokeWidth: 5),
+        ),
+      );
     }
 
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true),
+        gridData: const FlGridData(show: true),
         titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 20,
-              reservedSize: 40,
-            ),
+          leftTitles: const AxisTitles(
+            sideTitles:
+                SideTitles(showTitles: true, interval: 20, reservedSize: 40),
           ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               interval: 1,
-              getTitlesWidget: (value, meta) => Text('T${value.toInt() + 1}'),
+              getTitlesWidget: (value, meta) =>
+                  Text('T${value.toInt() + 1}',),
             ),
           ),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: true),
         minY: 0,
@@ -107,69 +127,148 @@ class _FinishedScreenState extends State<FinishedScreen> {
                 .toList(),
             isCurved: true,
             barWidth: 4,
-            color: Colors.black,
-            dotData: FlDotData(show: false),
+            color: const Color.fromARGB(255, 58, 92, 153),
+            dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  Colors.green.withOpacity(0.6),
-                  Colors.yellow.withOpacity(0.6),
-                  Colors.red.withOpacity(0.6),
+                  const Color.fromARGB(255, 76, 175, 80).withAlpha(60),
+                  const Color.fromARGB(255, 255, 235, 59).withAlpha(60),
+                  const Color.fromARGB(255, 244, 67, 54).withAlpha(60),
                 ],
-                stops: [0.0, 0.5, 1.0],
+                stops: const [0.0, 0.5, 1.0],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
           ),
+          LineChartBarData(
+            spots: List.generate(
+                keypointStats.length, (i) => FlSpot(i.toDouble(), avg)),
+            isCurved: false,
+            barWidth: 2,
+            color: Colors.orange,
+            dotData: const FlDotData(show: false),
+            dashArray: [6, 3],
+          ),
         ],
+        extraLinesData: ExtraLinesData(horizontalLines: [
+          HorizontalLine(
+            y: avg,
+            color: Colors.orange,
+            strokeWidth: 2,
+            dashArray: [6, 3],
+            label: HorizontalLineLabel(
+              show: true,
+              alignment: Alignment.centerRight,
+              style: const TextStyle(
+                color: Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
+              labelResolver: (_) => 'Avg: ${avg.toStringAsFixed(1)}%',
+            ),
+          ),
+        ]),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final avg = getAverageScore();
+    final danceRank = getScoreTitle(avg);
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Dance Statistics")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              'Dance Stats for "${widget.selection.title}"',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Expanded(child: Center(child: buildChart())),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: restartDance,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Restart'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+      appBar: AppBar(
+        title: const Text('Results', style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 58, 92, 153),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(
+                'Dance Stats for',
+                style: TextStyle(fontSize: 20, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '"${widget.selection.title}"',
+                style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 58, 92, 153)),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(20),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: buildChart(avg),
                 ),
-                ElevatedButton.icon(
-                  onPressed: endDance,
-                  icon: const Icon(Icons.home),
-                  label: const Text('End'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Average Score: ${avg.toStringAsFixed(1)}%',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ),
+              Text(
+                'Your Dance Rank: $danceRank',
+                style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: restartDance,
+                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    label: const Text('Restart',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 58, 92, 153),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  ElevatedButton.icon(
+                    onPressed: endDance,
+                    icon: const Icon(Icons.home, color: Colors.white),
+                    label: const Text('Home',
+                        style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 244, 67, 54),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

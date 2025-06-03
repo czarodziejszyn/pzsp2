@@ -40,38 +40,65 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
     final s = widget.selection;
 
     return Scaffold(
-      appBar: AppBar(title: Text(s.title)),
+      appBar: AppBar(
+        title: Text(
+          s.title,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color.fromARGB(255, 58, 92, 153),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  s.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(child: Icon(Icons.error, size: 100));
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    );
-                  },
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.black87,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(2, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    s.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(child: Icon(Icons.error, size: 100));
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 32),
             Text(
               'Select video fragment (${_currentRangeValues.end - _currentRangeValues.start} seconds)',
-              style: const TextStyle(fontSize: 18),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Color.fromARGB(255, 58, 92, 153),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -89,14 +116,26 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
                   setState(() => _currentRangeValues = values);
                 }
               },
+              activeColor: const Color.fromARGB(255, 58, 92, 153),
+              inactiveColor: Colors.grey.shade300,
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _onNextButtonPressed,
-              icon: const Icon(Icons.play_arrow, size: 30),
-              label: const Text('Play Selected Fragment', style: TextStyle(fontSize: 20)),
+              icon: const Icon(Icons.play_arrow, size: 28),
+              label: const Text(
+                'Play Selected Fragment',
+                style: TextStyle(fontSize: 18),
+              ),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                backgroundColor:
+                    const Color.fromARGB(255, 58, 92, 153),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -106,4 +145,3 @@ class _VideoSelectionPageState extends State<VideoSelectionPage> {
     );
   }
 }
-

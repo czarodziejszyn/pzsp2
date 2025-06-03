@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:pzsp/controllers/dance_controller.dart';
+import 'package:pzsp/elements/info_dialog_element.dart';
 import 'package:pzsp/models/dance.dart';
 import 'package:pzsp/models/dance_video_selection.dart';
 import 'package:pzsp/pages/video_selection_page.dart';
@@ -53,7 +54,29 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('MoovIT')),
+      appBar: AppBar(
+        title: const Text(
+          'MoovIT',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: IconButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => const InfoDialogElement(),
+                );
+              },
+              icon: const Icon(Icons.info),
+              color: Colors.white,
+              iconSize: 30,
+            ),
+          ),
+        ],
+        backgroundColor: const Color.fromARGB(255, 58, 92, 153),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -71,36 +94,45 @@ class _HomePageState extends State<HomePage> {
                             builder: (context) => Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: SizedBox(
-                                    height: 300,
-                                    child: Image.network(
-                                      '$supabaseUrl$supabaseBuckerDir/thumbnails/${dance.title}.jpg',
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return const Center(
-                                          child: Icon(Icons.error, size: 50),
-                                        );
-                                      },
-                                      loadingBuilder:
-                                          (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            value: loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                        .cumulativeBytesLoaded /
-                                                    loadingProgress
-                                                        .expectedTotalBytes!
-                                                : null,
-                                          ),
-                                        );
-                                      },
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.black87, 
+                                      width: 2, 
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: SizedBox(
+                                      height: 300,
+                                      child: Image.network(
+                                        '$supabaseUrl$supabaseBuckerDir/thumbnails/${dance.title}.jpg',
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return const Center(
+                                            child: Icon(Icons.error, size: 50),
+                                          );
+                                        },
+                                        loadingBuilder:
+                                            (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress
+                                                          .expectedTotalBytes !=
+                                                      null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null,
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -135,17 +167,21 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 32),
                     ElevatedButton.icon(
                       onPressed: _onSelectDance,
-                      icon: const Icon(Icons.check_circle_outline_rounded,
-                          size: 30),
+                      icon: const Icon(
+                        Icons.check_circle_outline_rounded,
+                        size: 30,
+                        color: Colors.white,
+                      ),
                       label: const Text(
                         'Select Dance',
-                        style: TextStyle(fontSize: 24),
+                        style: TextStyle(fontSize: 24, color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 16,
                         ),
+                        backgroundColor: const Color.fromARGB(255, 58, 92, 153),
                       ),
                     ),
                     const Spacer(

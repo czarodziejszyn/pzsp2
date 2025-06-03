@@ -88,7 +88,10 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
               : Text(
                   showGo ? 'GO!' : '$countdown',
                   style: const TextStyle(
-                      fontSize: 64, fontWeight: FontWeight.bold),
+                    fontSize: 80,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 58, 92, 153),
+                  ),
                 ),
         ),
         if (videoStarted)
@@ -96,14 +99,21 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
             top: 16,
             left: 16,
             child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.grey[800],
+              width: 70,
+              height: 70,
+              decoration: const BoxDecoration(
+                color: Color.fromARGB(200, 0, 0, 0),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 6,
+                    offset: Offset(2, 2),
+                  )
+                ],
               ),
               child: IconButton(
-                iconSize: 48,
+                iconSize: 36,
                 icon: const Icon(Icons.stop, color: Colors.white),
                 onPressed: () async {
                   await widget.controller.pause();
@@ -123,37 +133,48 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
           elevation: 16,
           child: Container(
-            padding: const EdgeInsets.all(20),
-            height: 250,
+            padding: const EdgeInsets.all(24),
+            height: 260,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
+                ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(150, 70),
-                    backgroundColor: Colors.deepPurple,
+                    minimumSize: const Size(180, 60),
+                    backgroundColor: const Color.fromARGB(255, 58, 92, 153),
+                    iconColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
+                  icon: const Icon(Icons.restart_alt, size: 28),
                   onPressed: () {
                     Navigator.of(context).pop();
                     restartCountdown();
                   },
-                  child: const Text("Restart",
-                      style: TextStyle(fontSize: 24, color: Colors.white)),
+                  label: const Text(
+                    "Restart",
+                    style: TextStyle(fontSize: 22, color: Colors.white),
+                  ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
+                ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(150, 70),
-                    backgroundColor: Colors.deepPurple,
+                    minimumSize: const Size(180, 60),
+                    backgroundColor: const Color.fromARGB(255, 180, 50, 50),
+                    iconColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
+                  icon: const Icon(Icons.stop_circle, size: 28),
                   onPressed: () {
                     widget.onVideoInterrupted();
                     Navigator.of(context).pop();
@@ -163,8 +184,10 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
                       (route) => false,
                     );
                   },
-                  child: const Text("Stop",
-                      style: TextStyle(fontSize: 24, color: Colors.white)),
+                  label: const Text(
+                    "End Dance",
+                    style: TextStyle(fontSize: 22, color: Colors.white),
+                  ),
                 ),
               ],
             ),
@@ -174,3 +197,4 @@ class _CountdownBeforeVideoState extends State<CountdownBeforeVideo> {
     );
   }
 }
+

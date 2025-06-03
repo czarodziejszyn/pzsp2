@@ -1,10 +1,8 @@
 import 'dart:typed_data';
 import 'dart:convert';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter/rendering.dart';
 import 'package:pzsp/models/dance_video_selection.dart';
 import 'package:video_player/video_player.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
