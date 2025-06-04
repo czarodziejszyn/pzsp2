@@ -164,7 +164,7 @@ def pose_angle_score(pose1, pose2):
     max_angle = 180
     # im większe k, tym większa różnica między podobnymi i odległymi
 
-    k = 50
+    k = 750
     scores = [math.exp(-k * (d / max_angle)**2) for d in diffs]
     
     return sum(scores) / len(scores)
