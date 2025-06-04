@@ -131,8 +131,10 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.edit,
-                                        color: Colors.deepPurple),
+                                    icon: const Icon(
+                                      Icons.edit,
+                                      color: Colors.deepPurple,
+                                    ),
                                     onPressed: () async {
                                       final result = await showDialog<bool>(
                                         context: context,
