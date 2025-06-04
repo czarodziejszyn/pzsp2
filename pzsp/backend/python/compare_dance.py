@@ -1,6 +1,9 @@
 import mediapipe as mp
 import numpy as np
 import csv
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
 from algorithm import pose_angle_score
 from supabase import create_client
 
