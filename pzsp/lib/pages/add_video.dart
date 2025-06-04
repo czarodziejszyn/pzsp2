@@ -120,7 +120,7 @@ class _AddVideoDialogState extends State<AddVideoDialog> {
       // Emitujemy event z nazwą pliku video do backendu
       if (channel.connected) {
         final message = jsonEncode({
-          'filename': _videoFile!.name,
+          'filename': title, 
         });
         channel.emit('new_video_uploaded', message);
         print('Emitted new_video_uploaded with filename: ${_videoFile!.name}');
