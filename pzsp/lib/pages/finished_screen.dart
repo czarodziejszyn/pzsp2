@@ -167,7 +167,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
                 color: Colors.orange,
                 fontWeight: FontWeight.bold,
               ),
-              labelResolver: (_) => 'Avg: ${avg.toStringAsFixed(1)}%',
+              labelResolver: (_) => 'Avg: ${avg.toString()}%',
             ),
           ),
         ]),
@@ -177,7 +177,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final avg = getAverageScore();
+    final avg = (getAverageScore() * 10).round() / 10;
     final danceRank = getScoreTitle(avg);
 
     return Scaffold(
@@ -224,7 +224,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Average Score: ${avg.toStringAsFixed(1)}%',
+                'Average Score: ${avg.toString()}%',
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
               ),
