@@ -1,7 +1,7 @@
 import mediapipe as mp
 import numpy as np
 import csv
-from .algorithm import pose_angle_score
+from algorithm import pose_angle_score
 from supabase import create_client
 
 url = "https://meompxrfkofzbxjwjpvr.supabase.co"
