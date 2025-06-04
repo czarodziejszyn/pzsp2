@@ -162,6 +162,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
             label: HorizontalLineLabel(
               show: true,
               alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(bottom: 20),
               style: const TextStyle(
                 color: Colors.orange,
                 fontWeight: FontWeight.bold,
@@ -183,6 +184,7 @@ class _FinishedScreenState extends State<FinishedScreen> {
       appBar: AppBar(
         title: const Text('Results', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color.fromARGB(255, 58, 92, 153),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SafeArea(
         child: Padding(
