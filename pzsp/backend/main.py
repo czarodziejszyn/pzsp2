@@ -5,7 +5,7 @@ import socketio
 import base64
 from io import BytesIO
 from PIL import Image
-from python.compare_dance import process_image, get_csv, motion_cache, load_pose_csv, DEFAULT_FRAME_RATE, get_mp4, upload_csv
+from python.compare_dance import process_image, get_csv, motion_cache, load_pose_csv, DEFAULT_FRAME_RATE
 from python.video_to_csv import extract_pose_landmarks
 import os
 import uuid
@@ -128,11 +128,9 @@ async def new_video_uploaded(sid, data):
 
         print(f"[NEW VIDEO] Otrzymano plik: {video_name}")
 
-        video_path = get_mp4(video_name)
-        output_csv = f"tmp/{video_name}.csv"
+        # trzeba pobrać mp4, wtedy wytworzyć csv i to csv zapisać w supabase
+        video_path, output_csv = "", ""
         extract_pose_landmarks(video_path, output_csv)
-
-        upload_csv(video_name)
 
     except Exception as e:
         print(f"[ERROR][new_video_uploaded] {e}")
