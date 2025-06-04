@@ -12,14 +12,26 @@ class SupabaseService {
     return data.map((item) => Dance.fromMap(item)).toList();
   }
 
-  Future<void> updateDance(Dance dance, {bool updateThumbnail = false}) async {
-    final data = {'description': dance.description};
-
-    if (updateThumbnail) {
-      data['thumbnail'] = dance.thumbnail;
+  /// Edytuje opis, a jeśli trzeba — podmienia thumbnail w Storage
+  Future<void> updateDance(Dance dance, {Uint8List? newThumbnailBytes}) async {
+    if (newThumbnailBytes != null) {
+      final filePath = '${dance.title}.jpg';
+      try {
+        await client.storage.from('thumbnails').remove([filePath]);
+        await client.storage.from('thumbnails').uploadBinary(
+              filePath,
+              newThumbnailBytes,
+              fileOptions:
+                  const FileOptions(cacheControl: '3600', upsert: true),
+            );
+      } catch (e) {
+        throw Exception('Błąd przy usuwaniu plików lub rekordu: $e');
+      }
     }
 
-    await client.from('dance_info').update(data).eq('id', dance.id);
+    await client.from('dance_info').update({
+      'description': dance.description,
+    }).eq('id', dance.id);
   }
 
   Future<void> deleteDance(Dance dance) async {
@@ -32,35 +44,6 @@ class SupabaseService {
     } catch (e) {
       throw Exception('Błąd przy usuwaniu plików lub rekordu: $e');
     }
-  }
-
-  /// Upload new thumbnail and update dance info
-  Future<Dance> uploadThumbnailAndUpdateDance(
-      Dance dance, Uint8List fileBytes) async {
-    final bucket = 'thumbnails';
-    final filePath = '${dance.title}.jpg';
-
-    // Usuń starą miniaturkę
-    await client.storage.from(bucket).remove([filePath]);
-
-    // Upload nowej miniaturki
-    await client.storage.from(bucket).uploadBinary(
-          filePath,
-          fileBytes,
-          fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-        );
-
-    // Zbuduj nowy URL miniaturki
-    final newThumbnailUrl =
-        '${supabaseUrl}${supabaseBuckerDir}/$bucket/$filePath';
-
-    // Zaktualizuj model z nowym URL
-    final updatedDance = dance.copyWith(thumbnail: newThumbnailUrl);
-
-    // Zapisz w bazie
-    await updateDance(updatedDance);
-
-    return updatedDance;
   }
 
   Future<void> uploadDance({

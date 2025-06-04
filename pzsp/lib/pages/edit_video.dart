@@ -32,7 +32,7 @@ class _EditVideoDialogState extends State<EditVideoDialog> {
   Future<void> _pickNewThumbnail() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png'],
+      allowedExtensions: ['jpg', 'jpeg'],
     );
     if (result != null) {
       setState(() {
@@ -65,38 +65,12 @@ class _EditVideoDialogState extends State<EditVideoDialog> {
     });
 
     try {
-      String? newThumbUrl;
+      final updatedDance = widget.video.copyWith(description: description);
 
-      if (_newThumbnailFile != null) {
-        final oldThumbPath =
-            extractStoragePathFromUrl(widget.video.thumbnail, 'thumbnails');
-        await supabase.storage.from('thumbnails').remove([oldThumbPath]);
-
-        final newThumbPath = '${widget.video.title}.jpg';
-
-        await supabase.storage.from('thumbnails').uploadBinary(
-              newThumbPath,
-              _newThumbnailFile!.bytes!,
-              fileOptions: const FileOptions(
-                cacheControl: '3600',
-                upsert: true,
-              ),
-            );
-
-        newThumbUrl =
-            '${supabaseUrl}${supabaseBuckerDir}/thumbnails/$newThumbPath';
-      }
-
-      final updatedDance = widget.video.copyWith(
-        description: description,
-        thumbnail: newThumbUrl ?? widget.video.thumbnail,
+      await _service.updateDance(
+        updatedDance,
+        newThumbnailBytes: _newThumbnailFile?.bytes,
       );
-
-      if (newThumbUrl != null) {
-        await _service.updateDance(updatedDance, updateThumbnail: true);
-      } else {
-        await _service.updateDance(updatedDance, updateThumbnail: false);
-      }
 
       Navigator.of(context).pop(true);
     } catch (e) {

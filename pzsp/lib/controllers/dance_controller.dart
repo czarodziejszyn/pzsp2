@@ -18,14 +18,8 @@ class DanceController {
       updatedDance = updatedDance.copyWith(description: newDescription);
     }
 
-    if (newThumbnailBytes != null) {
-      // Upload miniaturki i aktualizacja modelu i bazy w service
-      updatedDance = await _service.uploadThumbnailAndUpdateDance(
-          updatedDance, newThumbnailBytes);
-    } else {
-      // Aktualizacja tylko opisu jeśli miniaturka nie zmieniana
-      await _service.updateDance(updatedDance);
-    }
+    await _service.updateDance(updatedDance,
+        newThumbnailBytes: newThumbnailBytes);
 
     return updatedDance;
   }

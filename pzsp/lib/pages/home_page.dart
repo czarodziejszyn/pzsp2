@@ -117,7 +117,7 @@ class _HomePageState extends State<HomePage> {
                             child: ListTile(
                               leading: item.thumbnail.isNotEmpty
                                   ? Image.network(
-                                      item.thumbnail,
+                                      '${item.thumbnail}?v=${DateTime.now().millisecondsSinceEpoch}',
                                       width: 80,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) =>
