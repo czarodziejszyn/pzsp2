@@ -38,4 +38,3 @@ def extract_pose_landmarks(video_path, output_csv='dance_landmarks.csv'):
             frame_num += 1
 
     cap.release()
-
